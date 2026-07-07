@@ -12,10 +12,11 @@ function graphemes(str) {
 }
 
 class OutputArea {
-  constructor(textarea, { countEl, onCopyDone } = {}) {
+  constructor(textarea, { countEl, onCopyDone, onPasteFail } = {}) {
     this.ta = textarea;
     this.countEl = countEl;
     this.onCopyDone = onCopyDone;
+    this.onPasteFail = onPasteFail;
     this.history = [{ value: '', sel: 0 }];
     this.hi = 0;
     this.coalesceTimer = null;
@@ -113,6 +114,17 @@ class OutputArea {
 
   redo() {
     if (this.hi < this.history.length - 1) this.restore(this.history[++this.hi]);
+  }
+
+  async paste() {
+    let text = '';
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      if (this.onPasteFail) this.onPasteFail();
+      return;
+    }
+    if (text) this.insert(text);
   }
 
   async copy() {

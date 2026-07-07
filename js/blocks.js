@@ -12,10 +12,18 @@ class BlockHeader {
     this.current = null;
 
     root.innerHTML = `
-      <button type="button" class="block-btn" aria-haspopup="listbox" aria-expanded="false">
-        <span class="block-name">—</span>
-        <span class="caret">▾</span>
-      </button>
+      <div class="block-bar">
+        <button type="button" class="block-btn" aria-haspopup="listbox" aria-expanded="false">
+          <span class="block-name">—</span>
+          <span class="caret">▾</span>
+        </button>
+        <form class="jump" autocomplete="off">
+          <span class="jump-prefix">U+</span>
+          <input type="text" class="jump-input" placeholder="コードポイントで移動"
+                 inputmode="text" aria-label="コードポイントで移動（16進）" maxlength="6">
+          <button type="submit" class="jump-go" aria-label="移動">→</button>
+        </form>
+      </div>
       <div class="block-pop" hidden>
         <input type="text" class="block-search" placeholder="ブロックを検索…" aria-label="ブロック検索">
         <ul class="block-list" role="listbox"></ul>
@@ -26,11 +34,15 @@ class BlockHeader {
     this.pop = root.querySelector('.block-pop');
     this.search = root.querySelector('.block-search');
     this.listEl = root.querySelector('.block-list');
+    this.jumpForm = root.querySelector('.jump');
+    this.jumpInput = root.querySelector('.jump-input');
 
     this.buildList();
 
     this.btn.addEventListener('click', () => this.toggle());
     this.search.addEventListener('input', () => this.filter(this.search.value));
+    this.jumpForm.addEventListener('submit', (e) => { e.preventDefault(); this.jump(); });
+    this.jumpInput.addEventListener('input', () => this.jumpInput.classList.remove('invalid'));
     document.addEventListener('pointerdown', (e) => {
       if (this.open && !this.root.contains(e.target)) this.close();
     });
@@ -62,6 +74,23 @@ class BlockHeader {
     const s = q.trim().toLowerCase();
     for (const li of this.items)
       li.hidden = s ? !li.textContent.toLowerCase().includes(s) : false;
+  }
+
+  // Parse "1F600", "U+1F600", "u+41", "0x41" -> codepoint number (hex), or null.
+  parseCp(str) {
+    const s = str.trim().toUpperCase().replace(/^U\+/, '').replace(/^0X/, '');
+    if (!/^[0-9A-F]{1,6}$/.test(s)) return null;
+    return parseInt(s, 16);
+  }
+
+  jump() {
+    const cp = this.parseCp(this.jumpInput.value);
+    if (cp == null || !D.inScope(cp)) {
+      this.jumpInput.classList.add('invalid');
+      return;
+    }
+    this.onJump(cp, true);
+    this.jumpInput.blur();
   }
 
   setTopCp(cp) {

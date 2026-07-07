@@ -158,10 +158,22 @@ class Grid {
     });
   }
 
-  scrollToCp(cp) {
+  scrollToCp(cp, flash) {
     const row = D.cpToRow(cp);
     if (row == null) return;
+    // put the target row at the top so the block header reflects it
     this.scroll.scrollTop = row * D.ROW_H;
+    this.render(true);
+    if (flash) this.flashCp(cp);
+  }
+
+  flashCp(cp) {
+    const el = this.rowsEl.querySelector(`.cell[data-cp="${cp}"]`);
+    if (!el) return;
+    el.classList.remove('flash');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 1300);
   }
 }
 

@@ -28,13 +28,14 @@ index.html          エントリ
 css/styles.css      スタイル（ダーク基調・レスポンシブ）
 js/
   data.js           Unicode データ読込＋コードポイント処理（名称の算出含む）
-  output.js         出力部（挿入/削除/Undo/Redo/コピー/カウント）
-  grid.js           入力部の仮想スクロールグリッド
-  blocks.js         ブロック名ヘッダー＋検索プルダウン
+  output.js         出力部（挿入/削除/Undo/Redo/コピー/貼り付け/カウント）
+  grid.js           入力部の仮想スクロールグリッド（コードポイント・ジャンプ含む）
+  blocks.js         ブロック名ヘッダー＋検索プルダウン＋コードポイント入力欄
   modal.js          文字詳細モーダル
   favorites.js      お気に入りストア（localStorage）
+  history.js        入力履歴ストア（localStorage、新しい順・重複排除）
   menu.js           共通コンテキストメニュー
-  app.js            結線・モード切替・お気に入りキーボード
+  app.js            結線・モード切替・お気に入り／履歴キーボード
 data/
   blocks.js         ブロック定義（window.UNICODE_BLOCKS、初期ロード）
   categories.js     General Category を RLE 圧縮（window.UNICODE_CATEGORIES、初期ロード）
@@ -66,4 +67,6 @@ python3 tools/gen_data.py
 - 文字をタップ／クリック → 出力部に挿入
 - 右クリック／長押し → メニュー（お気に入り登録・詳細表示）
 - ブロック名 → プルダウンで検索・ジャンプ
-- タブでお気に入りキーボードに切替
+- ブロック名の右の入力欄にコードポイント（例 `1F600` / `U+41`）を入力 → その文字へジャンプ＆ハイライト
+- タブで「履歴」「お気に入り」キーボードに切替（履歴は最近入力した文字を新しい順に表示）
+- 出力部の「貼り付け」ボタン → クリップボードの内容をカーソル位置に挿入
