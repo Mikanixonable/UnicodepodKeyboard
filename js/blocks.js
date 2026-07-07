@@ -1,8 +1,10 @@
 // Sticky block-name header with a searchable dropdown that jumps the grid.
 
-import * as D from './data.js';
+(function () {
 
-export class BlockHeader {
+const D = window.App.Data;
+
+class BlockHeader {
   constructor(root, { onJump }) {
     this.root = root;
     this.onJump = onJump;
@@ -92,3 +94,7 @@ export class BlockHeader {
     this.btn.setAttribute('aria-expanded', 'false');
   }
 }
+
+window.App.Blocks = { BlockHeader };
+
+})();

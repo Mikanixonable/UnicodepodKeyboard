@@ -1,5 +1,7 @@
 // Output area: editable text, caret-aware insert/delete, undo/redo, copy, counts.
 
+(function () {
+
 const seg = (typeof Intl !== 'undefined' && Intl.Segmenter)
   ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
   : null;
@@ -9,7 +11,7 @@ function graphemes(str) {
   return [...str]; // fallback: code points
 }
 
-export class OutputArea {
+class OutputArea {
   constructor(textarea, { countEl, onCopyDone } = {}) {
     this.ta = textarea;
     this.countEl = countEl;
@@ -134,3 +136,8 @@ export class OutputArea {
     this.countEl.textContent = `${gr} 文字 / ${cps} コードポイント`;
   }
 }
+
+window.App = window.App || {};
+window.App.Output = { OutputArea };
+
+})();

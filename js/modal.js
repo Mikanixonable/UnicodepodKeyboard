@@ -1,8 +1,10 @@
 // Character detail modal with prev/next navigation, insert, and favorite toggle.
 
-import * as D from './data.js';
+(function () {
 
-export class DetailModal {
+const D = window.App.Data;
+
+class DetailModal {
   constructor(root, { onInsert, favorites }) {
     this.root = root;
     this.onInsert = onInsert;
@@ -88,3 +90,7 @@ export class DetailModal {
     this.updateFav();
   }
 }
+
+window.App.Modal = { DetailModal };
+
+})();

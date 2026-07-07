@@ -1,10 +1,12 @@
-import * as D from './data.js';
-import { Favorites } from './favorites.js';
-import { OutputArea } from './output.js';
-import { Grid } from './grid.js';
-import { BlockHeader } from './blocks.js';
-import { DetailModal } from './modal.js';
-import { openMenu } from './menu.js';
+(function () {
+
+const D = window.App.Data;
+const { Favorites } = window.App.Favorites;
+const { OutputArea } = window.App.Output;
+const { Grid } = window.App.Grid;
+const { BlockHeader } = window.App.Blocks;
+const { DetailModal } = window.App.Modal;
+const { openMenu } = window.App.Menu;
 
 async function main() {
   await D.loadCore();
@@ -130,3 +132,5 @@ main().catch((err) => {
   console.error(err);
   document.body.innerHTML = `<p style="padding:2rem;color:#f88">読み込みに失敗しました: ${err.message}</p>`;
 });
+
+})();

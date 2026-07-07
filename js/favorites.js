@@ -1,8 +1,10 @@
 // Favorites store (localStorage) + subscription.
 
+(function () {
+
 const KEY = 'unicode-app:favorites:v1';
 
-export class Favorites {
+class Favorites {
   constructor() {
     this.list = this.load();
     this.set = new Set(this.list);
@@ -61,3 +63,8 @@ export class Favorites {
   subscribe(fn) { this.subs.add(fn); return () => this.subs.delete(fn); }
   emit() { this.subs.forEach(fn => fn(this.list)); }
 }
+
+window.App = window.App || {};
+window.App.Favorites = { Favorites };
+
+})();

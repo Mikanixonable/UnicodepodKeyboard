@@ -1,11 +1,13 @@
 // Virtualized 16-column Unicode grid with tap-to-insert and long-press / right-click menu.
 
-import * as D from './data.js';
-import { openMenu } from './menu.js';
+(function () {
+
+const D = window.App.Data;
+const { openMenu } = window.App.Menu;
 
 const BUFFER = 6; // extra rows above/below viewport
 
-export class Grid {
+class Grid {
   constructor(root, { onInsert, onDetail, favorites, onTopCpChange }) {
     this.root = root;
     this.onInsert = onInsert;
@@ -166,3 +168,7 @@ export class Grid {
 function escapeHtml(s) {
   return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
+
+window.App.Grid = { Grid };
+
+})();

@@ -1,5 +1,7 @@
 // Singleton context menu shared by the grid and the favorites keyboard.
 
+(function () {
+
 let el = null;
 
 function ensure() {
@@ -18,7 +20,7 @@ function ensure() {
   return el;
 }
 
-export function openMenu(x, y, items) {
+function openMenu(x, y, items) {
   const m = ensure();
   m.innerHTML = '';
   for (const it of items) {
@@ -38,6 +40,11 @@ export function openMenu(x, y, items) {
   m.style.top = Math.max(8, py) + 'px';
 }
 
-export function hideMenu() {
+function hideMenu() {
   if (el) el.hidden = true;
 }
+
+window.App = window.App || {};
+window.App.Menu = { openMenu, hideMenu };
+
+})();

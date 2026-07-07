@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Generate static Unicode data for the app.
 
-Outputs (into ../data):
-  blocks.json      [{ "n": name, "s": start, "e": end }]  in-scope blocks
-  categories.json  RLE ranges [[start, end, "Cat"], ...] over scope
-  names.json       { "<hex>": "NAME" }  assigned, non-algorithmic chars only
+Outputs (into ../data) as classic-script JS files, each assigning to a
+`window.UNICODE_*` global. This (rather than plain .json) lets index.html
+load them via <script src> / dynamic script injection instead of fetch(),
+which is what makes the app work when opened directly as a local file
+(file://) with no server.
+
+  blocks.js      window.UNICODE_BLOCKS = [{ "n": name, "s": start, "e": end }, ...]
+  categories.js  window.UNICODE_CATEGORIES = RLE ranges [[start, end, "Cat"], ...]
+  names.js       window.UNICODE_NAMES = { "<hex>": "NAME" }  assigned, non-algorithmic chars only
 
 Scope: full BMP (U+0000..U+FFFF) plus the supplementary symbol/emoji region
 (U+1D000..U+1FBFF). Algorithmic name ranges (CJK ideographs, CJK compatibility
-ideographs, Hangul syllables) are excluded from names.json; the browser derives
+ideographs, Hangul syllables) are excluded from names.js; the browser derives
 those names on the fly.
 
 Requires network only for Blocks.txt (Python's unicodedata has no block API).
@@ -101,16 +106,18 @@ def main():
     cats = build_categories()
     names = build_names()
 
-    def dump(name, obj):
-        path = os.path.join(OUT_DIR, name)
+    def dump(filename, varname, obj):
+        path = os.path.join(OUT_DIR, filename)
         with open(path, "w", encoding="utf-8") as f:
+            f.write(f"window.{varname} = ")
             json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
-        print(f"  {name}: {len(obj)} entries, {os.path.getsize(path):,} bytes",
+            f.write(";\n")
+        print(f"  {filename}: {len(obj)} entries, {os.path.getsize(path):,} bytes",
               file=sys.stderr)
 
-    dump("blocks.json", blocks)
-    dump("categories.json", cats)
-    dump("names.json", names)
+    dump("blocks.js", "UNICODE_BLOCKS", blocks)
+    dump("categories.js", "UNICODE_CATEGORIES", cats)
+    dump("names.js", "UNICODE_NAMES", names)
     print("done.", file=sys.stderr)
 
 

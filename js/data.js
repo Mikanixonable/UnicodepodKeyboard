@@ -1,9 +1,19 @@
 // Core Unicode data + codepoint helpers.
 // Keep SEGMENTS in sync with tools/gen_data.py.
+//
+// This runs as a classic <script> (no import/export) so the app can be
+// opened directly as a local file (file://), where ES module loading and
+// fetch() of local resources are blocked by browsers. Unicode data is
+// loaded the same way: data/blocks.js and data/categories.js are plain
+// <script> tags that assign to window.UNICODE_* before this file runs;
+// data/names.js (large, lazily needed) is injected as a <script> tag on
+// demand instead of fetched.
 
-export const SEGMENTS = [[0x0000, 0xFFFF], [0x1D000, 0x1FBFF]];
-export const COLS = 16;
-export const ROW_H = 58; // px, must match --row-h in CSS
+(function () {
+
+const SEGMENTS = [[0x0000, 0xFFFF], [0x1D000, 0x1FBFF]];
+const COLS = 16;
+const ROW_H = 58; // px, must match --row-h in CSS
 
 let blocks = [];
 let catRuns = [];         // sorted [start, end, "Cat"]
@@ -12,36 +22,37 @@ let namesPromise = null;
 
 // ---- loading -------------------------------------------------------------
 
-export async function loadCore() {
-  const [b, c] = await Promise.all([
-    fetch('data/blocks.json').then(r => r.json()),
-    fetch('data/categories.json').then(r => r.json()),
-  ]);
-  blocks = b;
-  catRuns = c;
+function loadCore() {
+  blocks = window.UNICODE_BLOCKS || [];
+  catRuns = window.UNICODE_CATEGORIES || [];
+  return Promise.resolve();
 }
 
-export function ensureNames() {
+function ensureNames() {
   if (namesMap) return Promise.resolve(namesMap);
   if (!namesPromise) {
-    namesPromise = fetch('data/names.json')
-      .then(r => r.json())
-      .then(m => (namesMap = m));
+    namesPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'data/names.js';
+      s.onload = () => { namesMap = window.UNICODE_NAMES || {}; resolve(namesMap); };
+      s.onerror = () => reject(new Error('data/names.js の読み込みに失敗しました'));
+      document.head.appendChild(s);
+    });
   }
   return namesPromise;
 }
 
 // ---- basic helpers -------------------------------------------------------
 
-export function hex(cp) {
+function hex(cp) {
   return cp.toString(16).toUpperCase().padStart(4, '0');
 }
 
-export function inScope(cp) {
+function inScope(cp) {
   return SEGMENTS.some(([s, e]) => cp >= s && cp <= e);
 }
 
-export function categoryOf(cp) {
+function categoryOf(cp) {
   let lo = 0, hi = catRuns.length - 1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1, r = catRuns[mid];
@@ -52,39 +63,39 @@ export function categoryOf(cp) {
   return 'Cn';
 }
 
-export function isAssigned(cp) {
+function isAssigned(cp) {
   return categoryOf(cp) !== 'Cn';
 }
 
 // Cells that get no interactive glyph at all.
-export function isEmptyCell(cp) {
+function isEmptyCell(cp) {
   const c = categoryOf(cp);
   return c === 'Cn' || c === 'Cs' || c === 'Cc';
 }
 
 // Assigned + something meaningful to insert.
-export function isInsertable(cp) {
+function isInsertable(cp) {
   return !isEmptyCell(cp);
 }
 
 // Category that renders no visible ink (space / format) -> show a placeholder.
-export function isBlankGlyph(cp) {
+function isBlankGlyph(cp) {
   const c = categoryOf(cp);
   return c === 'Zs' || c === 'Zl' || c === 'Zp' || c === 'Cf';
 }
 
-export function isCombining(cp) {
+function isCombining(cp) {
   return categoryOf(cp)[0] === 'M';
 }
 
-export function glyphFor(cp) {
+function glyphFor(cp) {
   const ch = String.fromCodePoint(cp);
   return isCombining(cp) ? '◌' + ch : ch;
 }
 
 // ---- blocks --------------------------------------------------------------
 
-export function blockOf(cp) {
+function blockOf(cp) {
   let lo = 0, hi = blocks.length - 1;
   while (lo <= hi) {
     const m = (lo + hi) >> 1, b = blocks[m];
@@ -95,16 +106,16 @@ export function blockOf(cp) {
   return null;
 }
 
-export function getBlocks() {
+function getBlocks() {
   return blocks;
 }
 
 // ---- row model (virtual grid) -------------------------------------------
 
-export const segRows = SEGMENTS.map(([s, e]) => Math.ceil((e - s + 1) / COLS));
-export const totalRows = segRows.reduce((a, b) => a + b, 0);
+const segRows = SEGMENTS.map(([s, e]) => Math.ceil((e - s + 1) / COLS));
+const totalRows = segRows.reduce((a, b) => a + b, 0);
 
-export function rowToBaseCp(row) {
+function rowToBaseCp(row) {
   let acc = 0;
   for (let i = 0; i < SEGMENTS.length; i++) {
     if (row < acc + segRows[i]) return SEGMENTS[i][0] + (row - acc) * COLS;
@@ -113,7 +124,7 @@ export function rowToBaseCp(row) {
   return null;
 }
 
-export function cpToRow(cp) {
+function cpToRow(cp) {
   let acc = 0;
   for (let i = 0; i < SEGMENTS.length; i++) {
     const [s, e] = SEGMENTS[i];
@@ -136,7 +147,7 @@ function stepCp(cp, dir) {
   return null;
 }
 
-export function neighborInsertable(cp, dir) {
+function neighborInsertable(cp, dir) {
   let n = stepCp(cp, dir);
   while (n != null) {
     if (isInsertable(n)) return n;
@@ -159,7 +170,7 @@ function hangulName(cp) {
   return 'HANGUL SYLLABLE ' + L[l] + V[v] + T[t];
 }
 
-export function algorithmicName(cp) {
+function algorithmicName(cp) {
   if ((cp >= 0x3400 && cp <= 0x4DBF) || (cp >= 0x4E00 && cp <= 0x9FFF))
     return `CJK UNIFIED IDEOGRAPH-${hex(cp)}`;
   if (cp >= 0xF900 && cp <= 0xFAFF)
@@ -170,14 +181,14 @@ export function algorithmicName(cp) {
 }
 
 // Best-effort synchronous name (uses names map only if already loaded).
-export function nameSync(cp) {
+function nameSync(cp) {
   const a = algorithmicName(cp);
   if (a) return a;
   if (namesMap) return namesMap[hex(cp)] || null;
   return null;
 }
 
-export async function getName(cp) {
+async function getName(cp) {
   const a = algorithmicName(cp);
   if (a) return a;
   const map = await ensureNames();
@@ -200,18 +211,30 @@ const CAT_DESC = {
   Cn: 'Other, Not Assigned',
 };
 
-export function categoryDesc(cat) {
+function categoryDesc(cat) {
   return CAT_DESC[cat] || cat;
 }
 
-export function utf8Bytes(cp) {
+function utf8Bytes(cp) {
   return [...new TextEncoder().encode(String.fromCodePoint(cp))]
     .map(b => b.toString(16).toUpperCase().padStart(2, '0'));
 }
 
-export function utf16Units(cp) {
+function utf16Units(cp) {
   const s = String.fromCodePoint(cp), u = [];
   for (let i = 0; i < s.length; i++)
     u.push(s.charCodeAt(i).toString(16).toUpperCase().padStart(4, '0'));
   return u;
 }
+
+window.App = window.App || {};
+window.App.Data = {
+  SEGMENTS, COLS, ROW_H, segRows, totalRows,
+  loadCore, ensureNames,
+  hex, inScope, categoryOf, isAssigned, isEmptyCell, isInsertable, isBlankGlyph,
+  isCombining, glyphFor, blockOf, getBlocks, rowToBaseCp, cpToRow,
+  neighborInsertable, algorithmicName, nameSync, getName, categoryDesc,
+  utf8Bytes, utf16Units,
+};
+
+})();
