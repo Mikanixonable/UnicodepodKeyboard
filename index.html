@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Unicode 入力</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="loading" class="loading">読み込み中…</div>
+
+  <!-- 出力部 -->
+  <section class="output-area" aria-label="出力部">
+    <textarea id="output" rows="3" placeholder="ここに文字が入力されます。直接入力・編集もできます。"
+              spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    <div class="output-bar">
+      <div class="btn-group">
+        <button type="button" id="copy-btn" class="btn primary">⧉ コピー</button>
+        <button type="button" id="del-btn"  class="btn" title="1字削除">⌫</button>
+        <button type="button" id="clear-btn" class="btn" title="全削除">全消去</button>
+        <button type="button" id="undo-btn" class="btn" title="元に戻す">↶</button>
+        <button type="button" id="redo-btn" class="btn" title="やり直し">↷</button>
+      </div>
+      <span id="count" class="count"></span>
+    </div>
+  </section>
+
+  <!-- 入力部 -->
+  <section class="input-area" aria-label="入力部">
+    <div class="mode-tabs" role="tablist">
+      <button type="button" class="mode-tab active" data-mode="all" role="tab">全 Unicode</button>
+      <button type="button" class="mode-tab" data-mode="fav" role="tab">★ お気に入り</button>
+    </div>
+
+    <div id="panel-all" class="panel">
+      <div id="block-header" class="block-header"></div>
+      <div id="grid" class="grid"></div>
+    </div>
+
+    <div id="panel-fav" class="panel" hidden>
+      <div id="fav-board" class="fav-board"></div>
+    </div>
+  </section>
+
+  <!-- 詳細モーダル -->
+  <div id="modal" class="modal" hidden></div>
+
+  <!-- コピー通知 -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
