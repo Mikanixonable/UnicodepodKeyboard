@@ -202,12 +202,8 @@ button { font: inherit; cursor: pointer; }
   border-radius: 10px 10px 0 0; background: var(--panel-2); color: var(--muted);
 }
 
-.colormode-toggle {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
-  padding-bottom: 4px;
-}
 .font-toggle {
-  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
   padding-bottom: 4px;
 }
 .font-label { color: var(--muted); font-size: .78rem; margin-right: 2px; }
@@ -277,18 +273,30 @@ button { font: inherit; cursor: pointer; }
 }
 .block-search:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 
-/* attribute-color legend shown above the palette */
+/* attribute-color legend shown above the palette. Grid (not flex) with an
+   explicit auto-width right column, so the toggle always stays on the same
+   row as the legend instead of wrapping below it when the legend is long. */
 .block-legend {
-  display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 8px 8px; padding: 8px 10px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px 12px;
+  margin: 0 8px 8px; padding: 8px 10px;
   border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2);
 }
 
 /* same legend, always visible above the grid/current/history/mylist boards */
 .attr-legend {
-  flex: none; display: flex; flex-wrap: wrap; gap: 4px 14px;
+  flex: none; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px 14px;
   padding: 6px clamp(10px, 3vw, 20px); background: var(--panel);
   border-bottom: 1px solid var(--border);
 }
+/* color-mode toggle embedded in the legend (right column), so it appears
+   everywhere the legend does (the shared bar above the tabs, and the block
+   picker popup) */
+.colormode-toggle {
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  padding-left: 10px; border-left: 1px solid var(--border);
+}
+.colormode-label { color: var(--muted); font-size: .78rem; margin-right: 2px; white-space: nowrap; }
+.legend-items { min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; color: var(--muted); }
 .legend-none { font-style: italic; }
 .legend-en { font-size: .64rem; opacity: .75; }
@@ -500,12 +508,17 @@ button { font: inherit; cursor: pointer; }
 }
 .board-hint { color: var(--muted); font-size: .82rem; }
 .btn.small { padding: 5px 10px; font-size: .8rem; }
-.fav-board { flex: 1; min-height: 0; overflow-y: auto; padding: 12px clamp(10px, 3vw, 20px); }
+.fav-board { flex: 1; min-height: 0; overflow-y: auto; padding: 0 clamp(10px, 3vw, 20px); }
+/* same cell look as the main 符号表 grid (.cell base rule): tightly packed,
+   border dividers instead of individual cards, no leftmost code-position
+   column since these boards aren't in codepoint order. */
 .fav-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(3.2rem, 1fr)); gap: 8px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--cell-size, 58px), 1fr));
+  border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
 }
 .fav-grid .cell {
-  border: 1px solid var(--border); border-radius: 10px; height: 3.6rem; background: var(--panel-2);
+  height: var(--cell-size, 58px); border-radius: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
 .fav-empty { color: var(--muted); text-align: center; margin-top: 2rem; line-height: 1.8; }
 

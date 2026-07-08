@@ -24,7 +24,7 @@
       autocomplete="off"></textarea>
     <div class="output-bar">
       <div class="btn-group">
-        <button type="button" id="copy-btn" class="btn primary">⧉ コピー</button>
+        <button type="button" id="copy-btn" class="btn">⧉ コピー</button>
         <button type="button" id="paste-btn" class="btn" title="貼り付け">⧈ 貼り付け</button>
         <button type="button" id="del-btn" class="btn" title="1字削除">⌫ 1字削除</button>
         <button type="button" id="clear-btn" class="btn" title="全削除">✖︎ 全消去</button>
@@ -42,23 +42,18 @@
       <button type="button" class="mode-tab" data-mode="current" role="tab">入力内容</button>
       <button type="button" class="mode-tab" data-mode="history" role="tab">入力履歴</button>
       <button type="button" class="mode-tab" data-mode="fav" role="tab">マイリスト</button>
-      <div class="colormode-toggle" role="group" aria-label="色分け方式">
-        <span class="font-label">色分け</span>
-        <button type="button" class="colormode-opt" data-colormode="none">なし</button>
-        <button type="button" class="colormode-opt" data-colormode="category">種類</button>
-        <button type="button" class="colormode-opt" data-colormode="age">追加時期</button>
-      </div>
       <div class="font-toggle" role="group" aria-label="表示フォント">
         <span class="font-label">フォント</span>
         <button type="button" class="font-opt" data-font="system">システム</button>
         <button type="button" class="font-opt" data-font="noto">Noto</button>
-        <button type="button" class="font-opt" data-font="extended" title="西夏文字・変体仮名など、希少スクリプト用フォントを同梱（約6MB）">拡張</button>
+        <button type="button" class="font-opt" data-font="extended" title="西夏文字・変体仮名など、希少スクリプト用フォントを同梱(約6MB)">拡張</button>
       </div>
     </div>
 
+    <div id="attr-legend" class="attr-legend"></div>
+
     <div id="panel-all" class="panel">
       <div id="block-header" class="block-header"></div>
-      <div id="attr-legend" class="attr-legend"></div>
       <div id="grid" class="grid"></div>
     </div>
 
@@ -100,6 +95,7 @@
   <script src="js/data.js" defer></script>
   <script src="js/menu.js" defer></script>
   <script src="js/colormode.js" defer></script>
+  <script src="js/urlstate.js" defer></script>
   <script src="js/output.js" defer></script>
   <script src="js/favorites.js" defer></script>
   <script src="js/history.js" defer></script>

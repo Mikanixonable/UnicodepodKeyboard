@@ -3,19 +3,17 @@
 (function () {
 
 const D = window.App.Data;
-
-const HASH_RE = /(?:^#|&)cp=([0-9A-Fa-f]+)/;
+const UrlState = window.App.UrlState;
 
 function cpFromHash() {
-  const m = HASH_RE.exec(location.hash);
-  if (!m) return null;
-  const cp = parseInt(m[1], 16);
+  const raw = UrlState.get('cp');
+  if (!raw) return null;
+  const cp = parseInt(raw, 16);
   return Number.isFinite(cp) ? cp : null;
 }
 
 function setHash(cp) {
-  const hash = cp == null ? '' : `#cp=${cp.toString(16).toUpperCase()}`;
-  history.replaceState(null, '', location.pathname + location.search + hash);
+  UrlState.set('cp', cp == null ? null : cp.toString(16).toUpperCase());
 }
 
 class DetailModal {

@@ -5,10 +5,11 @@ const { MyLists } = window.App.MyLists;
 const { History } = window.App.History;
 const { OutputArea } = window.App.Output;
 const { Grid } = window.App.Grid;
-const { BlockHeader, legendHtmlFor } = window.App.Blocks;
+const { BlockHeader, Legend } = window.App.Blocks;
 const { DetailModal } = window.App.Modal;
 const { openMenu } = window.App.Menu;
 const { ColorMode } = window.App.ColorMode;
+const UrlState = window.App.UrlState;
 
 async function main() {
   await D.loadCore();
@@ -59,10 +60,9 @@ async function main() {
   $('#redo-btn').addEventListener('click', () => output.redo());
 
   // ---- modal, block header, grid ----------------------------------------
-  // ---- attribute-color legend (shared by grid cells, block names, and boards) --
-  const attrLegendEl = $('#attr-legend');
-  const renderAttrLegend = () => { attrLegendEl.innerHTML = legendHtmlFor(colorMode.get()); };
-  renderAttrLegend();
+  // Shared legend + color-mode toggle (embeds "なし/種類/追加時期" buttons),
+  // shown above all four tabs; the block picker popup has its own instance.
+  new Legend($('#attr-legend'), colorMode);
 
   const modal = new DetailModal($('#modal'), {
     onInsert: insert,
@@ -86,19 +86,11 @@ async function main() {
   });
 
   // ---- color-coding mode (none / category / age) -------------------------
-  const colorModeOpts = document.querySelectorAll('.colormode-opt');
-  const applyColorModeButtons = () => {
-    colorModeOpts.forEach((o) => o.classList.toggle('active', o.dataset.colormode === colorMode.get()));
-  };
-  colorModeOpts.forEach((o) => o.addEventListener('click', () => colorMode.set(o.dataset.colormode)));
   colorMode.subscribe(() => {
-    applyColorModeButtons();
-    renderAttrLegend();
     drawFav();
     drawHist();
     drawCurrent(output.ta.value);
   });
-  applyColorModeButtons();
 
   // ---- mylist & history keyboards ---------------------------------------
   const favPanel = $('#panel-fav');
@@ -205,12 +197,21 @@ async function main() {
     all: $('#panel-all'), current: $('#panel-current'),
     history: $('#panel-history'), fav: $('#panel-fav'),
   };
-  const setMode = (mode) => {
+  let currentMode = 'all';
+  const setMode = (mode, updateUrl = true) => {
+    if (!panels[mode]) return;
+    currentMode = mode;
     tabs.forEach((x) => x.classList.toggle('active', x.dataset.mode === mode));
     for (const key in panels) panels[key].hidden = mode !== key;
     if (mode === 'all') grid.refreshLayout(true);
+    if (updateUrl) UrlState.set('mode', mode);
   };
   tabs.forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
+  window.addEventListener('hashchange', () => {
+    const mode = UrlState.get('mode');
+    if (mode && mode !== currentMode && panels[mode]) setMode(mode, false);
+  });
+  setMode(UrlState.get('mode') || 'all');
   revealInAll = (cp, flash = true) => {
     setMode('all');
     modal.close();

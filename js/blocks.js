@@ -26,6 +26,35 @@ function legendHtmlFor(mode) {
     .join('');
 }
 
+// Self-contained legend widget: the color-mode toggle (なし/種類/追加時期)
+// plus the matching legend for whichever mode is active. Instantiate one per
+// place the legend should appear (the shared bar above all four tabs, and
+// the block picker popup) -- each re-renders itself on color-mode change.
+class Legend {
+  constructor(root, colorMode) {
+    this.root = root;
+    this.colorMode = colorMode;
+    this.render();
+    this.colorMode.subscribe(() => this.render());
+  }
+
+  render() {
+    const mode = this.colorMode.get();
+    this.root.innerHTML =
+      `<div class="legend-items">${legendHtmlFor(mode)}</div>
+      <div class="colormode-toggle" role="group" aria-label="色分け方式">
+        <span class="colormode-label">色分け</span>
+        <button type="button" class="colormode-opt" data-colormode="none">なし</button>
+        <button type="button" class="colormode-opt" data-colormode="category">種類</button>
+        <button type="button" class="colormode-opt" data-colormode="age">追加時期</button>
+      </div>`;
+    for (const btn of this.root.querySelectorAll('.colormode-opt')) {
+      btn.classList.toggle('active', btn.dataset.colormode === mode);
+      btn.addEventListener('click', () => this.colorMode.set(btn.dataset.colormode));
+    }
+  }
+}
+
 class BlockHeader {
   constructor(root, { onJump, colorMode }) {
     this.root = root;
@@ -73,7 +102,7 @@ class BlockHeader {
 
     this.buildList();
     this.buildPlaneJump();
-    this.renderLegend();
+    new Legend(this.legendEl, colorMode);
 
     this.btn.addEventListener('click', () => this.toggle());
     this.search.addEventListener('input', () => this.filter(this.search.value));
@@ -91,14 +120,11 @@ class BlockHeader {
 
   mode() { return this.colorMode.get(); }
 
-  renderLegend() {
-    this.legendEl.innerHTML = legendHtmlFor(this.mode());
-  }
-
   // Re-colors everything already in the DOM (list swatches + the current
-  // block indicator) after the color mode changes, without rebuilding.
+  // block indicator) after the color mode changes, without rebuilding. The
+  // legend itself (including its embedded toggle) re-renders on its own via
+  // the Legend instance created in the constructor.
   applyColorMode() {
-    this.renderLegend();
     const mode = this.mode();
     for (const li of this.items) {
       const b = D.blockOf(Number(li.dataset.cp));
@@ -248,6 +274,6 @@ function escapeHtml(s) {
   return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
-window.App.Blocks = { BlockHeader, legendHtmlFor };
+window.App.Blocks = { BlockHeader, legendHtmlFor, Legend };
 
 })();
