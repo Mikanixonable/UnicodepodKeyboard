@@ -60,6 +60,7 @@ async function main() {
   const modal = new DetailModal($('#modal'), {
     onInsert: insert,
     onReveal: (cp) => revealInAll && revealInAll(cp),
+    onAddMenu: (cp, rect) => openMyListMenu(cp, rect.left + rect.width / 2, rect.bottom + 8),
     mylists,
   });
   const header = new BlockHeader($('#block-header'), {
@@ -68,6 +69,7 @@ async function main() {
   const grid = new Grid($('#grid'), {
     onInsert: insert,
     onDetail: (cp) => modal.open(cp),
+    onAddMenu: (cp) => openMyListMenu(cp, window.innerWidth / 2, window.innerHeight / 2),
     onReveal: (cp, flash) => revealInAll && revealInAll(cp, flash),
     mylists,
     onTopCpChange: (cp) => header.setTopCp(cp),
@@ -140,10 +142,7 @@ async function main() {
 
   bindCharBoard(currentBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
-    {
-      label: mylists.has(cp) ? `${mylists.activeList.icon} ${mylists.activeList.name}から外す` : `${mylists.activeList.icon} ${mylists.activeList.name}に追加`,
-      onClick: () => mylists.toggle(cp),
-    },
+    { label: 'マイリストへ追加…', onClick: () => openMyListMenu(cp, window.innerWidth / 2, window.innerHeight / 2) },
   ]);
   bindCharBoard(favBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
@@ -153,10 +152,7 @@ async function main() {
   ]);
   bindCharBoard(histBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
-    {
-      label: mylists.has(cp) ? `${mylists.activeList.icon} ${mylists.activeList.name}から外す` : `${mylists.activeList.icon} ${mylists.activeList.name}に追加`,
-      onClick: () => mylists.toggle(cp),
-    },
+    { label: 'マイリストへ追加…', onClick: () => openMyListMenu(cp, window.innerWidth / 2, window.innerHeight / 2) },
     { label: '履歴から削除', onClick: () => history.remove(cp) },
   ]);
 
@@ -184,6 +180,17 @@ async function main() {
     modal.close();
     grid.scrollToCp(cp, flash);
   };
+
+  function openMyListMenu(cp, x, y) {
+    const items = [];
+    for (const list of mylists.lists) {
+      const label = mylists.hasIn(list.id, cp)
+        ? `${list.icon} ${list.name} から外す`
+        : `${list.icon} ${list.name} に追加`;
+      items.push({ label, onClick: () => mylists.toggleIn(list.id, cp) });
+    }
+    openMenu(x, y, items);
+  }
 
   // start names prefetch in the background (non-blocking) for snappy modals
   D.ensureNames();

@@ -8,10 +8,11 @@ const { openMenu } = window.App.Menu;
 const BUFFER = 6; // extra rows above/below viewport
 
 class Grid {
-  constructor(root, { onInsert, onDetail, onReveal, mylists, onTopCpChange }) {
+  constructor(root, { onInsert, onDetail, onAddMenu, onReveal, mylists, onTopCpChange }) {
     this.root = root;
     this.onInsert = onInsert;
     this.onDetail = onDetail;
+    this.onAddMenu = onAddMenu;
     this.onReveal = onReveal;
     this.fav = mylists;
     this.onTopCpChange = onTopCpChange;
@@ -136,6 +137,7 @@ class Grid {
   menuItems(cp) {
     const label = this.fav.activeLabel || 'マイリスト';
     return [
+      { label: 'マイリストへ追加…', onClick: () => this.onAddMenu && this.onAddMenu(cp) },
       {
         label: this.fav.has(cp) ? `${label}から外す` : `${label}に追加`,
         onClick: () => this.fav.toggle(cp),

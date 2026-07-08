@@ -5,10 +5,11 @@
 const D = window.App.Data;
 
 class DetailModal {
-  constructor(root, { onInsert, onReveal, mylists }) {
+  constructor(root, { onInsert, onReveal, onAddMenu, mylists }) {
     this.root = root;
     this.onInsert = onInsert;
     this.onReveal = onReveal;
+    this.onAddMenu = onAddMenu;
     this.fav = mylists;
     this.cp = null;
 
@@ -25,6 +26,7 @@ class DetailModal {
         <dl class="modal-info"></dl>
         <div class="modal-actions">
           <button type="button" class="btn insert-btn">＋ 入力</button>
+          <button type="button" class="btn add-btn">他のマイリストへ追加</button>
           <button type="button" class="btn reveal-btn">全Unicodeで表示</button>
           <button type="button" class="btn fav-btn"></button>
         </div>
@@ -33,6 +35,7 @@ class DetailModal {
     this.glyphEl = root.querySelector('.modal-glyph');
     this.nameEl = root.querySelector('.modal-name');
     this.infoEl = root.querySelector('.modal-info');
+    this.addBtn = root.querySelector('.add-btn');
     this.revealBtn = root.querySelector('.reveal-btn');
     this.favBtn = root.querySelector('.fav-btn');
 
@@ -41,6 +44,11 @@ class DetailModal {
     root.querySelector('.nav-prev').addEventListener('click', () => this.step(-1));
     root.querySelector('.nav-next').addEventListener('click', () => this.step(1));
     root.querySelector('.insert-btn').addEventListener('click', () => this.onInsert(this.cp));
+    this.addBtn.addEventListener('click', () => {
+      if (this.cp == null || !this.onAddMenu) return;
+      const rect = this.addBtn.getBoundingClientRect();
+      this.onAddMenu(this.cp, rect);
+    });
     this.revealBtn.addEventListener('click', () => { if (this.cp != null && this.onReveal) this.onReveal(this.cp); });
     this.favBtn.addEventListener('click', () => { this.fav.toggle(this.cp); this.updateFav(); });
 

@@ -106,11 +106,48 @@ class MyLists {
     return list ? `${list.icon} ${list.name}` : DEFAULT_LIST_NAME;
   }
 
+  labelFor(id) {
+    const list = this.findList(id);
+    return list ? `${list.icon} ${list.name}` : DEFAULT_LIST_NAME;
+  }
+
   findList(id) {
     return this.state.lists.find((list) => list.id === id) || null;
   }
 
   has(cp) { return !!this.activeList && this.activeList.set.has(cp); }
+
+  hasIn(id, cp) {
+    const list = this.findList(id);
+    return !!list && list.set.has(cp);
+  }
+
+  addTo(id, cp) {
+    const list = this.findList(id);
+    if (!list) return false;
+    if (list.set.has(cp)) return false;
+    list.set.add(cp);
+    list.items.push(cp);
+    this.save();
+    this.emit();
+    return true;
+  }
+
+  removeFrom(id, cp) {
+    const list = this.findList(id);
+    if (!list || !list.set.has(cp)) return false;
+    list.set.delete(cp);
+    list.items = list.items.filter((x) => x !== cp);
+    this.save();
+    this.emit();
+    return true;
+  }
+
+  toggleIn(id, cp) {
+    const list = this.findList(id);
+    if (!list) return false;
+    return list.set.has(cp) ? !this.removeFrom(id, cp) : this.addTo(id, cp);
+  }
 
   canDeleteActive() {
     return !!this.activeList && !this.activeList.builtIn;
@@ -152,27 +189,11 @@ class MyLists {
   }
 
   toggle(cp) {
-    const list = this.activeList;
-    if (!list) return false;
-    if (list.set.has(cp)) {
-      list.set.delete(cp);
-      list.items = list.items.filter((x) => x !== cp);
-    } else {
-      list.set.add(cp);
-      list.items.push(cp);
-    }
-    this.save();
-    this.emit();
-    return list.set.has(cp);
+    return this.toggleIn(this.activeId, cp);
   }
 
   remove(cp) {
-    const list = this.activeList;
-    if (!list || !list.set.has(cp)) return;
-    list.set.delete(cp);
-    list.items = list.items.filter((x) => x !== cp);
-    this.save();
-    this.emit();
+    this.removeFrom(this.activeId, cp);
   }
 
   move(cp, dir) {
