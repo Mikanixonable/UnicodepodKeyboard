@@ -4,6 +4,18 @@
 
 const D = window.App.Data;
 
+const GROUP_LABELS = {
+  letter: '文字', mark: '記号(結合)', number: '数字', punct: '句読点',
+  symbol: '記号', emoji: '絵文字', separator: '区切り', control: '制御',
+  format: '書式', surrogate: 'サロゲート', private: '私用領域', unassigned: '未割り当て',
+};
+
+function legendHtml() {
+  return Object.entries(GROUP_LABELS)
+    .map(([g, label]) => `<span class="legend-item"><span class="swatch" data-group="${g}"></span>${label}</span>`)
+    .join('');
+}
+
 class BlockHeader {
   constructor(root, { onJump }) {
     this.root = root;
@@ -59,14 +71,7 @@ class BlockHeader {
   }
 
   legendHtml() {
-    const LABELS = {
-      letter: '文字', mark: '記号(結合)', number: '数字', punct: '句読点',
-      symbol: '記号', emoji: '絵文字', separator: '区切り', control: '制御',
-      format: '書式', surrogate: 'サロゲート', private: '私用領域', unassigned: '未割り当て',
-    };
-    return Object.entries(LABELS)
-      .map(([g, label]) => `<span class="legend-item"><span class="swatch" data-group="${g}"></span>${label}</span>`)
-      .join('');
+    return legendHtml();
   }
 
   buildList() {
@@ -157,6 +162,6 @@ function escapeHtml(s) {
   return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
-window.App.Blocks = { BlockHeader };
+window.App.Blocks = { BlockHeader, legendHtml };
 
 })();

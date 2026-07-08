@@ -211,6 +211,13 @@ button { font: inherit; cursor: pointer; }
   display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 8px 8px; padding: 8px 10px;
   border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2);
 }
+
+/* same legend, always visible above the grid/current/history/mylist boards */
+.attr-legend {
+  flex: none; display: flex; flex-wrap: wrap; gap: 4px 14px;
+  padding: 6px clamp(10px, 3vw, 20px); background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
 .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; color: var(--muted); }
 
 .swatch {

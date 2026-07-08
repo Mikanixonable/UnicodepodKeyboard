@@ -57,6 +57,9 @@ async function main() {
   $('#redo-btn').addEventListener('click', () => output.redo());
 
   // ---- modal, block header, grid ----------------------------------------
+  // ---- attribute-color legend (shared by grid cells, block names, and boards) --
+  $('#attr-legend').innerHTML = window.App.Blocks.legendHtml();
+
   const modal = new DetailModal($('#modal'), {
     onInsert: insert,
     onReveal: (cp) => revealInAll && revealInAll(cp),
@@ -259,6 +262,7 @@ function renderCharBoard(el, list, mylists, emptyHtml) {
     b.type = 'button';
     b.className = 'cell' + (mylists.has(cp) ? ' fav' : '');
     b.dataset.cp = cp;
+    b.dataset.group = D.groupOf(cp);
     b.dataset.badge = mylists.activeList.icon;
     b.style.setProperty('--list-badge-color', mylists.activeList.icon === '★' ? 'var(--fav)' : 'var(--accent)');
     b.innerHTML = `<span class="glyph">${D.glyphFor(cp)}</span><span class="cp">${D.hex(cp)}</span>`;
