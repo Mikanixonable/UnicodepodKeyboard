@@ -77,7 +77,11 @@ class Grid {
     const currentWidth = this.scroll.clientWidth;
     if (currentWidth <= 0) return;
     const gutterWidth = this.headerGutterEl.getBoundingClientRect().width;
-    const usable = currentWidth - gutterWidth;
+    // Subtract the gutter twice: once for the left row-label column, once
+    // for the matching blank spacer column on the right (see .col-header /
+    // .grid-row grid-template-columns), so the 16 colored cell-columns sit
+    // centered (gutter : cells : spacer = 1 : 16 : 1) instead of flush left.
+    const usable = currentWidth - gutterWidth * 2;
     const nextRowH = Math.max(1, usable / D.COLS);
     const prevRowH = this.rowH;
     if (nextRowH !== prevRowH) {

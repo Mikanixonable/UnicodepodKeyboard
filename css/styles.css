@@ -454,7 +454,7 @@ button { font: inherit; cursor: pointer; }
 .grid { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .col-header {
-  flex: none; display: grid; grid-template-columns: var(--gutter) repeat(16, var(--cell-size));
+  flex: none; display: grid; grid-template-columns: var(--gutter) repeat(16, var(--cell-size)) var(--gutter);
   background: var(--panel); border-bottom: 1px solid var(--border);
   color: var(--muted); font-size: .72rem; scrollbar-gutter: stable;
 }
@@ -463,7 +463,6 @@ button { font: inherit; cursor: pointer; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-right: 10px;
 }
 
 .grid-scroll { flex: 1; min-height: 0; overflow-y: auto; position: relative; scrollbar-gutter: stable; }
@@ -471,13 +470,13 @@ button { font: inherit; cursor: pointer; }
 .grid-rows { position: absolute; top: 0; left: 0; right: 0; will-change: transform; }
 
 .grid-row {
-  display: grid; grid-template-columns: var(--gutter) repeat(16, var(--cell-size));
+  display: grid; grid-template-columns: var(--gutter) repeat(16, var(--cell-size)) var(--gutter);
   height: var(--cell-size);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
 .gutter {
-  display: flex; align-items: center; justify-content: flex-end;
-  padding-right: 10px; color: var(--muted); font-size: .68rem;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: .68rem;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .gutter .x { opacity: .5; }
