@@ -58,14 +58,23 @@ class Legend {
 // Builds the plane-header + block-item <li>s shared by the block-picker
 // modal list and the persistent sidebar list. onItemClick(block) is called
 // on click; the two callers differ only in what else that does (close the
-// modal, or not).
-function buildBlockList(listEl, mode, onItemClick) {
+// modal, or not). onContextMenu(block, x, y), if given, is wired to
+// right-click (used for the favorite-block toggle). blocks defaults to every
+// block, in codepoint order; pass a filtered/reordered list (e.g. the
+// favorited ones, in the user's custom order) to render a subset instead.
+// noPlaneHeaders skips the "第N面" group headers -- appropriate for a
+// custom-ordered list, where blocks no longer run in ascending codepoint
+// order and a header-per-plane-change would be meaningless. draggable +
+// onReorder(draggedCp, droppedOnCp) wire up HTML5 drag-and-drop reordering.
+function buildBlockList(listEl, mode, onItemClick, {
+  blocks, blockFavorites, onContextMenu, noPlaneHeaders, draggable, onReorder,
+} = {}) {
   const frag = document.createDocumentFragment();
   let lastPlane = null;
   const planeHeaders = [];
-  for (const b of D.getBlocks()) {
+  for (const b of (blocks || D.getBlocks())) {
     const plane = b.s >>> 16;
-    if (plane !== lastPlane) {
+    if (!noPlaneHeaders && plane !== lastPlane) {
       lastPlane = plane;
       const header = document.createElement('li');
       header.className = 'plane-header';
@@ -77,9 +86,11 @@ function buildBlockList(listEl, mode, onItemClick) {
     const { ja, en } = D.blockLabel(b.n);
     const group = D.blockGroupForMode(mode, b) || '';
     const samples = D.sampleGlyphs(b, 3);
+    const isFav = blockFavorites ? blockFavorites.has(b.s) : false;
     const li = document.createElement('li');
     li.role = 'option';
     li.className = 'block-item';
+    li.classList.toggle('is-fav', isFav);
     li.dataset.cp = b.s;
     li.dataset.group = group;
     const range = `U+${D.hex(b.s)}–U+${D.hex(b.e)}`;
@@ -92,55 +103,186 @@ function buildBlockList(listEl, mode, onItemClick) {
           (ja ? `<span class="name-en">${escapeHtml(en)}</span>` : '') +
           `<span class="block-item-range">${range}</span>` +
         `</span>` +
+        `<span class="block-item-fav" aria-hidden="true">★</span>` +
       `</div>` +
       (samples.length
         ? `<div class="block-item-samples">${samples.map((cp) => `<span class="sample-glyph">${escapeHtml(D.glyphFor(cp))}</span>`).join('')}</div>`
         : '');
     li.addEventListener('click', () => onItemClick(b));
+    if (onContextMenu) {
+      li.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        onContextMenu(b, e.clientX, e.clientY);
+      });
+    }
+    if (draggable) {
+      li.draggable = true;
+      li.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', String(b.s));
+        e.dataTransfer.effectAllowed = 'move';
+        li.classList.add('dragging');
+      });
+      li.addEventListener('dragend', () => li.classList.remove('dragging'));
+      li.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        li.classList.add('drag-over');
+      });
+      li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+      li.addEventListener('drop', (e) => {
+        e.preventDefault();
+        li.classList.remove('drag-over');
+        const draggedCp = Number(e.dataTransfer.getData('text/plain'));
+        if (Number.isFinite(draggedCp) && draggedCp !== b.s && onReorder) onReorder(draggedCp, b.s);
+      });
+    }
     frag.appendChild(li);
   }
   listEl.appendChild(frag);
   return { items: [...listEl.querySelectorAll('.block-item')], planeHeaders };
 }
 
-// Persistent scrollable block list shown in the right menu zone: same
-// look as the modal's list (colors, samples), clicking jumps the main grid
-// without opening/closing anything.
+// Right-click menu shared by the modal list and the sidebar list: toggle
+// whether this block is in the favorite-blocks set (shown in the right menu
+// zone's "お気に入り" tab).
+// FLIP reorder animation: snapshot each item's position (keyed by its
+// data-cp) before the DOM mutates, then after `rebuild()` runs, slide items
+// from their old spot to the new one so drag-reordering doesn't just snap.
+function animateReorder(listEl, rebuild) {
+  const before = new Map();
+  for (const li of listEl.querySelectorAll('.block-item'))
+    before.set(li.dataset.cp, li.getBoundingClientRect());
+  rebuild();
+  for (const li of listEl.querySelectorAll('.block-item')) {
+    const old = before.get(li.dataset.cp);
+    if (!old) continue;
+    const now = li.getBoundingClientRect();
+    const dx = old.left - now.left;
+    const dy = old.top - now.top;
+    if (!dx && !dy) continue;
+    li.style.transition = 'none';
+    li.style.transform = `translate(${dx}px, ${dy}px)`;
+    requestAnimationFrame(() => {
+      li.style.transition = 'transform .2s ease';
+      li.style.transform = '';
+    });
+  }
+}
+
+function openBlockFavMenu(b, x, y, blockFavorites) {
+  const isFav = blockFavorites.has(b.s);
+  window.App.Menu.openMenu(x, y, [{
+    label: isFav ? '★ お気に入りブロックから削除' : '★ お気に入りブロックに追加',
+    onClick: () => blockFavorites.toggle(b.s),
+  }]);
+}
+
+// Renders "第N面" shortcut buttons and wires them to scroll their list to
+// that plane's header. Shared by the modal (which also clears its search
+// box first) and the sidebar's "全て" tab.
+function wirePlaneJump(container, planeHeaders, { beforeJump } = {}) {
+  container.innerHTML = planeHeaders
+    .map(({ plane }) => `<button type="button" class="plane-jump-btn" data-plane="${plane}" title="${escapeHtml(planeLabel(plane))}">第${plane}面</button>`)
+    .join('');
+  for (const btn of container.children) {
+    btn.addEventListener('click', () => {
+      const plane = Number(btn.dataset.plane);
+      const target = planeHeaders.find((h) => h.plane === plane);
+      if (!target) return;
+      if (beforeJump) beforeJump();
+      target.el.scrollIntoView({ block: 'start' });
+    });
+  }
+}
+
+// Persistent scrollable block list shown in the right menu zone: same look
+// as the modal's list (colors, samples), clicking jumps the main grid
+// without opening/closing anything. Has two tabs -- 全て (every block) and
+// お気に入り (just the ones favorited via right-click, here or in the modal).
 class BlockSidebar {
-  constructor(root, { onJump, colorMode }) {
+  constructor(root, { onJump, colorMode, blockFavorites }) {
     this.root = root;
     this.onJump = onJump;
     this.colorMode = colorMode;
-    root.innerHTML = '<ul class="block-list block-sidebar-list" role="listbox"></ul>';
-    this.listEl = root.querySelector('.block-list');
-    this.buildList();
-    this.colorMode.subscribe(() => this.applyColorMode());
+    this.blockFavorites = blockFavorites;
+    this.tab = 'all';
+    root.innerHTML = `
+      <div class="block-sidebar-tabs" role="tablist">
+        <button type="button" class="block-sidebar-tab active" data-tab="all" role="tab">全て</button>
+        <button type="button" class="block-sidebar-tab" data-tab="fav" role="tab">★ お気に入り</button>
+      </div>
+      <div class="plane-jump" data-panel="all"></div>
+      <ul class="block-list" data-panel="all" role="listbox"></ul>
+      <ul class="block-list" data-panel="fav" role="listbox" hidden></ul>`;
+    this.planeJumpEl = root.querySelector('.plane-jump');
+    this.allListEl = root.querySelector('ul[data-panel="all"]');
+    this.favListEl = root.querySelector('ul[data-panel="fav"]');
+
+    this.buildAll();
+    this.buildFav();
+
+    for (const t of root.querySelectorAll('.block-sidebar-tab')) {
+      t.addEventListener('click', () => this.setTab(t.dataset.tab));
+    }
+    this.colorMode.subscribe(() => { this.buildAll(); this.buildFav(); });
+    this.blockFavorites.subscribe(() => { this.buildAll(); this.buildFav(); });
   }
 
   mode() { return this.colorMode.get(); }
 
-  buildList() {
-    const { items } = buildBlockList(this.listEl, this.mode(), (b) => this.onJump(b.s));
-    this.items = items;
+  setTab(tab) {
+    this.tab = tab;
+    for (const t of this.root.querySelectorAll('.block-sidebar-tab'))
+      t.classList.toggle('active', t.dataset.tab === tab);
+    this.planeJumpEl.hidden = tab !== 'all';
+    this.allListEl.hidden = tab !== 'all';
+    this.favListEl.hidden = tab !== 'fav';
   }
 
-  applyColorMode() {
-    const mode = this.mode();
-    for (const li of this.items) {
-      const b = D.blockOf(Number(li.dataset.cp));
-      const g = b ? (D.blockGroupForMode(mode, b) || '') : '';
-      li.dataset.group = g;
-      const sw = li.querySelector('.swatch');
-      if (sw) sw.dataset.group = g;
-    }
+  buildAll() {
+    this.allListEl.replaceChildren();
+    const { items, planeHeaders } = buildBlockList(this.allListEl, this.mode(), (b) => this.onJump(b.s), {
+      blockFavorites: this.blockFavorites,
+      onContextMenu: (b, x, y) => openBlockFavMenu(b, x, y, this.blockFavorites),
+    });
+    this.allItems = items;
+    wirePlaneJump(this.planeJumpEl, planeHeaders);
+  }
+
+  // Favorites keep the user's own drag-to-reorder order (not codepoint
+  // order), so no plane headers (a plane-change header would be meaningless
+  // once entries are reshuffled) and drag-and-drop is enabled here only.
+  buildFav() {
+    animateReorder(this.favListEl, () => {
+      this.favListEl.replaceChildren();
+      const byStart = new Map(D.getBlocks().map((b) => [b.s, b]));
+      const favBlocks = this.blockFavorites.list().map((cp) => byStart.get(cp)).filter(Boolean);
+      if (!favBlocks.length) {
+        const empty = document.createElement('li');
+        empty.className = 'block-sidebar-empty';
+        empty.role = 'presentation';
+        empty.textContent = 'ブロックを右クリックして「お気に入りブロックに追加」してください。';
+        this.favListEl.appendChild(empty);
+        return;
+      }
+      buildBlockList(this.favListEl, this.mode(), (b) => this.onJump(b.s), {
+        blocks: favBlocks,
+        blockFavorites: this.blockFavorites,
+        noPlaneHeaders: true,
+        draggable: true,
+        onReorder: (draggedCp, droppedOnCp) => this.blockFavorites.moveBefore(draggedCp, droppedOnCp),
+        onContextMenu: (b, x, y) => openBlockFavMenu(b, x, y, this.blockFavorites),
+      });
+    });
   }
 }
 
 class BlockHeader {
-  constructor(root, { onJump, colorMode, jumpRoot }) {
+  constructor(root, { onJump, colorMode, jumpRoot, blockFavorites }) {
     this.root = root;
     this.onJump = onJump;
     this.colorMode = colorMode;
+    this.blockFavorites = blockFavorites;
     this.open = false;
     this.current = null;
     this.currentBlock = null;
@@ -208,9 +350,15 @@ class BlockHeader {
       if (this.open && e.key === 'Escape') { this.close(); this.btn.focus(); }
     });
     this.colorMode.subscribe(() => this.applyColorMode());
+    this.blockFavorites.subscribe(() => this.applyFavorites());
   }
 
   mode() { return this.colorMode.get(); }
+
+  applyFavorites() {
+    for (const li of this.items)
+      li.classList.toggle('is-fav', this.blockFavorites.has(Number(li.dataset.cp)));
+  }
 
   // Re-colors everything already in the DOM (list swatches + the current
   // block indicator) after the color mode changes, without rebuilding. The
@@ -232,25 +380,18 @@ class BlockHeader {
     const { items, planeHeaders } = buildBlockList(this.listEl, this.mode(), (b) => {
       this.onJump(b.s);
       this.close();
+    }, {
+      blockFavorites: this.blockFavorites,
+      onContextMenu: (b, x, y) => openBlockFavMenu(b, x, y, this.blockFavorites),
     });
     this.items = items;
     this.planeHeaders = planeHeaders;
   }
 
   buildPlaneJump() {
-    this.planeJumpEl.innerHTML = this.planeHeaders
-      .map(({ plane }) => `<button type="button" class="plane-jump-btn" data-plane="${plane}" title="${escapeHtml(planeLabel(plane))}">第${plane}面</button>`)
-      .join('');
-    for (const btn of this.planeJumpEl.children) {
-      btn.addEventListener('click', () => {
-        const plane = Number(btn.dataset.plane);
-        const target = this.planeHeaders.find((h) => h.plane === plane);
-        if (!target) return;
-        this.search.value = '';
-        this.filter('');
-        target.el.scrollIntoView({ block: 'start' });
-      });
-    }
+    wirePlaneJump(this.planeJumpEl, this.planeHeaders, {
+      beforeJump: () => { this.search.value = ''; this.filter(''); },
+    });
   }
 
   filter(q) {

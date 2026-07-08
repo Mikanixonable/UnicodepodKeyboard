@@ -9,6 +9,7 @@ const { BlockHeader, Legend, BlockSidebar } = window.App.Blocks;
 const { DetailModal } = window.App.Modal;
 const { openMenu } = window.App.Menu;
 const { ColorMode } = window.App.ColorMode;
+const { BlockFavorites } = window.App.BlockFavorites;
 const UrlState = window.App.UrlState;
 
 async function main() {
@@ -33,6 +34,7 @@ async function main() {
   const mylists = new MyLists();
   const history = new History();
   const colorMode = new ColorMode();
+  const blockFavorites = new BlockFavorites();
   const currentBoard = $('#current-board');
   let revealInAll = null;
 
@@ -103,6 +105,7 @@ async function main() {
     onJump: (cp, flash) => grid.scrollToCp(cp, flash),
     colorMode,
     jumpRoot: $('#jump-form-slot'),
+    blockFavorites,
   });
   // right-menu-zone block list: same jump behavior as the modal, but also
   // switches to the 符号表 tab first (revealInAll), since it's reachable
@@ -110,6 +113,7 @@ async function main() {
   new BlockSidebar($('#block-sidebar'), {
     onJump: (cp) => revealInAll && revealInAll(cp),
     colorMode,
+    blockFavorites,
   });
   const grid = new Grid($('#grid'), {
     onInsert: insert,
