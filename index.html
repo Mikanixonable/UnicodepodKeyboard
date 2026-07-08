@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="color-scheme" content="dark light">
-  <title>Unicode 入力</title>
+  <title>Unicodepod Keyboard</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='14' fill='%236ea8fe'/%3E%3Ctext x='32' y='45' font-family='system-ui,sans-serif' font-size='36' font-weight='700' fill='white' text-anchor='middle'%3EU%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
   <!-- @font-face rules for bundled rare-script fonts (fonts/*.woff2); each
        has a unicode-range so the browser only downloads it when the "拡張"
@@ -17,6 +18,12 @@
 
 <body>
   <div id="loading" class="loading">読み込み中…</div>
+
+  <!-- サイトタイトル -->
+  <header class="site-header">
+    <span class="site-icon" aria-hidden="true">U</span>
+    <h1 class="site-title">Unicodepod Keyboard</h1>
+  </header>
 
   <!-- 出力部 -->
   <section class="output-area" aria-label="出力部">
