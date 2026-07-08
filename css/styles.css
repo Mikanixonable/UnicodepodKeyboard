@@ -353,6 +353,10 @@ button { font: inherit; cursor: pointer; }
 }
 .colormode-label { color: var(--muted); font-size: .78rem; margin-right: 2px; white-space: nowrap; }
 .legend-items { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+/* only the block picker modal keeps the legend horizontal (wraps across
+   multiple items per row) -- it has the width to spare, unlike the narrow
+   left menu zone bar where the vertical list lives normally. */
+.block-pop-box .legend-items { flex-direction: row; flex-wrap: wrap; gap: 4px 14px; }
 .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; color: var(--muted); }
 .legend-none { font-style: italic; }
 /* legend items: English stacked below the Japanese, both small */
