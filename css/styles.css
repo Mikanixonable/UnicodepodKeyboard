@@ -218,6 +218,7 @@ button { font: inherit; cursor: pointer; }
   border-bottom: 1px solid var(--border);
 }
 .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; color: var(--muted); }
+.legend-en { font-size: .64rem; opacity: .75; }
 
 .swatch {
   display: inline-block; flex: none; width: .6rem; height: .6rem; border-radius: 3px;

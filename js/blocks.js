@@ -5,14 +5,15 @@
 const D = window.App.Data;
 
 const GROUP_LABELS = {
-  letter: '文字', mark: '記号(結合)', number: '数字', punct: '句読点',
-  symbol: '記号', emoji: '絵文字', separator: '区切り', control: '制御',
-  format: '書式', surrogate: 'サロゲート', private: '私用領域', unassigned: '未割り当て',
+  letter: ['文字', 'Letter'], mark: ['記号(結合)', 'Mark'], number: ['数字', 'Number'], punct: ['句読点', 'Punctuation'],
+  symbol: ['記号', 'Symbol'], emoji: ['絵文字', 'Emoji'], separator: ['区切り', 'Separator'], control: ['制御', 'Control'],
+  format: ['書式', 'Format'], surrogate: ['サロゲート', 'Surrogate'], private: ['私用領域', 'Private Use'], unassigned: ['未割り当て', 'Unassigned'],
 };
 
 function legendHtml() {
   return Object.entries(GROUP_LABELS)
-    .map(([g, label]) => `<span class="legend-item"><span class="swatch" data-group="${g}"></span>${label}</span>`)
+    .map(([g, [ja, en]]) =>
+      `<span class="legend-item"><span class="swatch" data-group="${g}"></span>${ja} <span class="legend-en">${en}</span></span>`)
     .join('');
 }
 
