@@ -12,11 +12,12 @@ function graphemes(str) {
 }
 
 class OutputArea {
-  constructor(textarea, { countEl, onCopyDone, onPasteFail } = {}) {
+  constructor(textarea, { countEl, onCopyDone, onPasteFail, onChange } = {}) {
     this.ta = textarea;
     this.countEl = countEl;
     this.onCopyDone = onCopyDone;
     this.onPasteFail = onPasteFail;
+    this.onChange = onChange;
     this.history = [{ value: '', sel: 0 }];
     this.hi = 0;
     this.coalesceTimer = null;
@@ -140,12 +141,17 @@ class OutputArea {
     if (this.onCopyDone) this.onCopyDone();
   }
 
+  // Called after every content-changing operation (typing, insert, delete,
+  // clear, undo/redo). Drives both the counter label and anything that
+  // mirrors the current output text (e.g. the "current characters" tab).
   updateCount() {
-    if (!this.countEl) return;
     const v = this.ta.value;
-    const cps = [...v].length;
-    const gr = graphemes(v).length;
-    this.countEl.textContent = `${gr} 文字 / ${cps} コードポイント`;
+    if (this.countEl) {
+      const cps = [...v].length;
+      const gr = graphemes(v).length;
+      this.countEl.textContent = `${gr} 文字 / ${cps} コードポイント`;
+    }
+    if (this.onChange) this.onChange(v);
   }
 }
 

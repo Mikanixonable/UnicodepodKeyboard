@@ -11,7 +11,9 @@
 
 (function () {
 
-const SEGMENTS = [[0x0000, 0xFFFF], [0x1D000, 0x1FBFF]];
+// Covered ranges come from data/segments.js (generated), so scope lives in a
+// single place. Fallback matches the generator's default plane trimming.
+const SEGMENTS = window.UNICODE_SEGMENTS || [[0x0000, 0xFFFF], [0x10000, 0x323AF], [0xE0000, 0xE01EF]];
 const COLS = 16;
 const ROW_H = 58; // px, must match --row-h in CSS
 
@@ -170,13 +172,17 @@ function hangulName(cp) {
   return 'HANGUL SYLLABLE ' + L[l] + V[v] + T[t];
 }
 
+// Mirrors ALGORITHMIC in tools/gen_data.py: these codepoints are excluded from
+// names.js and their names are reconstructed here.
+const CJK_UNIFIED = [[0x3400, 0x4DBF], [0x4E00, 0x9FFF],
+  [0x20000, 0x2A6DF], [0x2A700, 0x2EE5F], [0x30000, 0x323AF]];
+const CJK_COMPAT = [[0xF900, 0xFAFF], [0x2F800, 0x2FA1F]];
+const inAny = (cp, ranges) => ranges.some(([s, e]) => cp >= s && cp <= e);
+
 function algorithmicName(cp) {
-  if ((cp >= 0x3400 && cp <= 0x4DBF) || (cp >= 0x4E00 && cp <= 0x9FFF))
-    return `CJK UNIFIED IDEOGRAPH-${hex(cp)}`;
-  if (cp >= 0xF900 && cp <= 0xFAFF)
-    return `CJK COMPATIBILITY IDEOGRAPH-${hex(cp)}`;
-  if (cp >= 0xAC00 && cp <= 0xD7A3)
-    return hangulName(cp);
+  if (inAny(cp, CJK_UNIFIED)) return `CJK UNIFIED IDEOGRAPH-${hex(cp)}`;
+  if (inAny(cp, CJK_COMPAT)) return `CJK COMPATIBILITY IDEOGRAPH-${hex(cp)}`;
+  if (cp >= 0xAC00 && cp <= 0xD7A3) return hangulName(cp);
   return null;
 }
 

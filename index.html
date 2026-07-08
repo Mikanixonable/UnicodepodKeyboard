@@ -6,6 +6,8 @@
   <meta name="color-scheme" content="dark light">
   <title>Unicode 入力</title>
   <link rel="stylesheet" href="css/styles.css">
+  <!-- apply the saved glyph font before first paint to avoid a flash -->
+  <script>try{var f=localStorage.getItem('unicode-app:font:v1');if(f)document.documentElement.dataset.font=f;}catch(e){}</script>
 </head>
 <body>
   <div id="loading" class="loading">読み込み中…</div>
@@ -31,13 +33,26 @@
   <section class="input-area" aria-label="入力部">
     <div class="mode-tabs" role="tablist">
       <button type="button" class="mode-tab active" data-mode="all" role="tab">全 Unicode</button>
+      <button type="button" class="mode-tab" data-mode="current" role="tab">✎ 現在</button>
       <button type="button" class="mode-tab" data-mode="history" role="tab">🕘 履歴</button>
       <button type="button" class="mode-tab" data-mode="fav" role="tab">★ お気に入り</button>
+      <div class="font-toggle" role="group" aria-label="表示フォント">
+        <span class="font-label">フォント</span>
+        <button type="button" class="font-opt" data-font="system">システム</button>
+        <button type="button" class="font-opt" data-font="noto">Noto</button>
+      </div>
     </div>
 
     <div id="panel-all" class="panel">
       <div id="block-header" class="block-header"></div>
       <div id="grid" class="grid"></div>
+    </div>
+
+    <div id="panel-current" class="panel" hidden>
+      <div class="board-bar">
+        <span class="board-hint">現在、出力欄で使われている文字（出現順）</span>
+      </div>
+      <div id="current-board" class="fav-board"></div>
     </div>
 
     <div id="panel-history" class="panel" hidden>
@@ -61,6 +76,7 @@
 
   <!-- Unicode data: classic <script> assigning window.UNICODE_* (not fetched,
        so this works when index.html is opened directly as a local file). -->
+  <script src="data/segments.js" defer></script>
   <script src="data/blocks.js" defer></script>
   <script src="data/categories.js" defer></script>
 

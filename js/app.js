@@ -24,16 +24,26 @@ async function main() {
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
   };
 
+  // ---- stores --------------------------------------------------------
+  // Created before OutputArea: its onChange fires synchronously during
+  // construction (initial updateCount() call), so anything it touches
+  // must already exist.
+  const favorites = new Favorites();
+  const history = new History();
+  const currentBoard = $('#current-board');
+
+  function drawCurrent(text) {
+    renderCharBoard(currentBoard, distinctCodepoints(text), favorites,
+      '出力欄に文字を入力すると、ここに使われている文字が表示されます。');
+  }
+
   // ---- output area -------------------------------------------------------
   const output = new OutputArea($('#output'), {
     countEl: $('#count'),
     onCopyDone: () => showToast('コピーしました'),
     onPasteFail: () => showToast('クリップボードを読み取れませんでした（Cmd/Ctrl+V で貼り付けてください）'),
+    onChange: drawCurrent,
   });
-
-  // ---- stores ------------------------------------------------------------
-  const favorites = new Favorites();
-  const history = new History();
 
   // Every app-driven insertion records the character into history.
   const insert = (cp) => { output.insert(String.fromCodePoint(cp)); history.record(cp); };
@@ -66,12 +76,19 @@ async function main() {
   const drawHist = () => renderCharBoard(histBoard, history.list, favorites,
     '入力履歴はまだありません。<br>文字を入力すると、ここに新しい順で表示されます。');
 
-  // favorites changes affect the star badge on both boards
-  favorites.subscribe(() => { drawFav(); drawHist(); });
+  // favorites changes affect the star badge on all three boards
+  favorites.subscribe(() => { drawFav(); drawHist(); drawCurrent(output.ta.value); });
   history.subscribe(drawHist);
   drawFav();
   drawHist();
 
+  bindCharBoard(currentBoard, insert, (cp) => [
+    { label: '詳細を表示', onClick: () => modal.open(cp) },
+    {
+      label: favorites.has(cp) ? '★ お気に入り解除' : '☆ お気に入り登録',
+      onClick: () => favorites.toggle(cp),
+    },
+  ]);
   bindCharBoard(favBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
     { label: '← 前へ移動', onClick: () => favorites.move(cp, -1) },
@@ -91,10 +108,14 @@ async function main() {
     if (history.list.length) history.clear();
   });
 
+  // ---- font toggle (system glyphs vs installed Noto fonts) --------------
+  setupFontToggle();
+
   // ---- mode toggle -------------------------------------------------------
   const tabs = document.querySelectorAll('.mode-tab');
   const panels = {
-    all: $('#panel-all'), history: $('#panel-history'), fav: $('#panel-fav'),
+    all: $('#panel-all'), current: $('#panel-current'),
+    history: $('#panel-history'), fav: $('#panel-fav'),
   };
   tabs.forEach((t) => t.addEventListener('click', () => {
     tabs.forEach((x) => x.classList.toggle('active', x === t));
@@ -107,7 +128,32 @@ async function main() {
   $('#loading').remove();
 
   // debug handle (harmless in production; used by tests)
-  window.__app = { output, favorites, history, grid, header, modal, insert };
+  window.__app = { output, favorites, history, grid, header, modal, insert, drawCurrent };
+}
+
+// Unique codepoints in a string, in order of first appearance.
+function distinctCodepoints(str) {
+  const seen = new Set();
+  const list = [];
+  for (const ch of str) {
+    const cp = ch.codePointAt(0);
+    if (!seen.has(cp)) { seen.add(cp); list.push(cp); }
+  }
+  return list;
+}
+
+// Switch the glyph font between the system stack and installed Noto fonts.
+function setupFontToggle() {
+  const KEY = 'unicode-app:font:v1';
+  const opts = document.querySelectorAll('.font-opt');
+  const cur = () => document.documentElement.dataset.font === 'noto' ? 'noto' : 'system';
+  const apply = (font) => {
+    document.documentElement.dataset.font = font;
+    try { localStorage.setItem(KEY, font); } catch { /* ignore */ }
+    opts.forEach((o) => o.classList.toggle('active', o.dataset.font === font));
+  };
+  opts.forEach((o) => o.addEventListener('click', () => apply(o.dataset.font)));
+  apply(cur());
 }
 
 // Render a list of codepoints as a clickable keyboard (favorites / history).

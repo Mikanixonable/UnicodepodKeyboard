@@ -13,6 +13,23 @@
   --row-h: 58px;
   --gutter: 3.6rem;
   --grid-cols: var(--gutter) repeat(16, minmax(0, 1fr));
+  /* glyph font: default follows the OS; toggled to Noto via [data-font] */
+  --font-glyph: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", "Noto Sans CJK JP", "Noto Color Emoji", sans-serif;
+}
+
+/* Noto stack: lists many script-specific Noto families so the browser falls
+   back per glyph. Uses whichever Noto fonts are installed locally (nothing is
+   embedded, keeping the app lightweight and offline-friendly). */
+:root[data-font="noto"] {
+  --font-glyph:
+    "Noto Sans", "Noto Sans Symbols", "Noto Sans Symbols 2", "Noto Sans Math",
+    "Noto Music", "Noto Sans CJK JP", "Noto Serif CJK JP",
+    "Noto Sans Cuneiform", "Noto Sans Egyptian Hieroglyphs",
+    "Noto Sans Linear B", "Noto Sans Linear A", "Noto Sans Cypro-Minoan",
+    "Noto Sans Gothic", "Noto Sans Old Italic", "Noto Sans Runic",
+    "Noto Sans Anatolian Hieroglyphs", "Noto Sans Tangut", "Noto Sans Nushu",
+    "Noto Color Emoji", "Noto Sans Historic", sans-serif;
 }
 
 @media (prefers-color-scheme: light) {
@@ -65,6 +82,7 @@ button { font: inherit; cursor: pointer; }
   border-radius: 10px;
   background: var(--panel-2);
   color: var(--text);
+  font-family: var(--font-glyph);
   font-size: 1.15rem;
   line-height: 1.6;
 }
@@ -94,13 +112,24 @@ button { font: inherit; cursor: pointer; }
 .input-area { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .mode-tabs {
-  flex: none; display: flex; gap: 4px; padding: 8px clamp(10px, 3vw, 20px) 0;
-  background: var(--panel);
+  flex: none; display: flex; align-items: flex-end; gap: 4px;
+  padding: 8px clamp(10px, 3vw, 20px) 0; background: var(--panel);
 }
 .mode-tab {
   padding: 8px 16px; border: 1px solid var(--border); border-bottom: none;
   border-radius: 10px 10px 0 0; background: var(--panel-2); color: var(--muted);
 }
+
+.font-toggle {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
+  padding-bottom: 4px;
+}
+.font-label { color: var(--muted); font-size: .78rem; margin-right: 2px; }
+.font-opt {
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--panel-2); color: var(--muted); font-size: .8rem;
+}
+.font-opt.active { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
 .mode-tab.active { background: var(--bg); color: var(--text); font-weight: 600; }
 
 .panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -188,7 +217,7 @@ button { font: inherit; cursor: pointer; }
   background: transparent; color: var(--text); padding: 2px 0; overflow: hidden;
   position: relative;
 }
-.cell .glyph { font-size: clamp(1.05rem, 4.4vw, 1.5rem); line-height: 1.05; }
+.cell .glyph { font-size: clamp(1.05rem, 4.4vw, 1.5rem); line-height: 1.05; font-family: var(--font-glyph); }
 .cell .cp { font-size: .58rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .cell:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .cell:active { background: color-mix(in srgb, var(--accent) 28%, transparent); }
@@ -260,7 +289,7 @@ button { font: inherit; cursor: pointer; }
 .nav-prev:hover, .nav-next:hover { border-color: var(--accent); }
 .modal-glyph {
   flex: 1; text-align: center; font-size: clamp(3.5rem, 22vw, 6rem); line-height: 1.1;
-  min-width: 0; word-break: break-all;
+  min-width: 0; word-break: break-all; font-family: var(--font-glyph);
 }
 .modal-name { text-align: center; font-weight: 600; margin-bottom: 16px; min-height: 1.4em; }
 .modal-info { margin: 0; }
