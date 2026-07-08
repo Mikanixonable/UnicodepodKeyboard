@@ -231,6 +231,10 @@ async function main() {
   // ---- font toggle (system glyphs vs installed Noto fonts) --------------
   setupFontToggle();
 
+  // ---- mobile drawers (left = settings, right = block picker) ------------
+  setupMobileDrawers();
+  setupResponsiveCount();
+
   // ---- mode toggle -------------------------------------------------------
   const tabs = document.querySelectorAll('.mode-tab');
   const panels = {
@@ -303,6 +307,47 @@ function setupFontToggle() {
   };
   opts.forEach((o) => o.addEventListener('click', () => apply(o.dataset.font)));
   apply(cur());
+}
+
+// Slide-in drawers for the left (settings) and right (block picker) menu
+// zones, shown only on narrow screens (see the max-width:768px media query).
+// Opening one closes the other; a backdrop, the close buttons, and Escape all
+// dismiss whichever is open.
+function setupMobileDrawers() {
+  const left = document.querySelector('.menu-left');
+  const right = document.querySelector('.menu-right');
+  const backdrop = document.querySelector('#drawer-backdrop');
+
+  const close = () => {
+    left.classList.remove('open');
+    right.classList.remove('open');
+    backdrop.classList.remove('open');
+  };
+  const open = (drawer) => {
+    close();
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+  };
+
+  document.querySelector('#menu-left-toggle').addEventListener('click', () => open(left));
+  document.querySelector('#menu-right-toggle').addEventListener('click', () => open(right));
+  backdrop.addEventListener('click', close);
+  for (const btn of document.querySelectorAll('.drawer-close'))
+    btn.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+}
+
+// Relocates the #count node (文字数/コードポイント数) between its normal
+// spot in .output-bar and a slot in the mobile top bar, since that's blank
+// space on narrow screens where .output-bar has none to spare.
+function setupResponsiveCount() {
+  const count = document.querySelector('#count');
+  const mobileSlot = document.querySelector('#mobile-bar-count-slot');
+  const outputBar = document.querySelector('.output-bar');
+  const mq = window.matchMedia('(max-width: 768px)');
+  const apply = () => (mq.matches ? mobileSlot : outputBar).appendChild(count);
+  mq.addEventListener('change', apply);
+  apply();
 }
 
 function escapeHtml(s) {

@@ -19,22 +19,21 @@ class Grid {
     this.colorMode = colorMode;
     this.onTopCpChange = onTopCpChange;
     this.rowH = D.ROW_H;
+    this.cols = D.COLS;
+    this.mobile = window.matchMedia('(max-width: 768px)').matches;
 
     root.innerHTML = `
-      <div class="col-header" role="row">
-        <div class="gutter">U+0x</div>
-        ${Array.from({ length: D.COLS }, (_, i) =>
-          `<div class="colh">${i.toString(16).toUpperCase()}</div>`).join('')}
-      </div>
+      <div class="col-header" role="row"></div>
       <div class="grid-scroll" tabindex="0">
         <div class="grid-sizer" style="height:${D.totalRows * D.ROW_H}px"></div>
         <div class="grid-rows"></div>
       </div>`;
 
+    this.colHeaderEl = root.querySelector('.col-header');
     this.scroll = root.querySelector('.grid-scroll');
     this.rowsEl = root.querySelector('.grid-rows');
     this.sizerEl = root.querySelector('.grid-sizer');
-    this.headerGutterEl = root.querySelector('.col-header .gutter');
+    this.buildColHeader();
     this.lastStart = -1;
     this.lastTopCp = -1;
 
@@ -73,14 +72,52 @@ class Grid {
     return Math.ceil(this.scroll.clientHeight / this.rowH);
   }
 
+  // (Re)builds the column-index header row. Desktop keeps the row-address
+  // gutter + one hex-digit column per cell (0-F, grid-aligned to the data
+  // columns below). Mobile drops it entirely -- there's no row-address
+  // gutter to label there either, and each cell already shows its own full
+  // "U+XXXX" text, so a column-position legend has nothing left to add.
+  buildColHeader() {
+    if (this.mobile) {
+      this.colHeaderEl.innerHTML = '';
+      this.headerGutterEl = null;
+    } else {
+      this.colHeaderEl.innerHTML =
+        `<div class="gutter">U+0x</div>` +
+        Array.from({ length: D.COLS }, (_, i) => `<div class="colh">${i.toString(16).toUpperCase()}</div>`).join('');
+      this.headerGutterEl = this.colHeaderEl.querySelector('.gutter');
+    }
+  }
+
   refreshLayout(forceRender = false) {
     const currentWidth = this.scroll.clientWidth;
     if (currentWidth <= 0) return;
-    const gutterWidth = this.headerGutterEl.getBoundingClientRect().width;
-    // Subtract the gutter twice: once for the left row-label column, once
-    // for the matching blank spacer column on the right (see .col-header /
-    // .grid-row grid-template-columns), so the 16 colored cell-columns sit
-    // centered (gutter : cells : spacer = 1 : 16 : 1) instead of flush left.
+
+    // Mobile shows 8 codepoints per row instead of 16, and drops the
+    // row-address gutter entirely (each cell shows its own full "U+XXXX", so
+    // it's redundant there -- see buildRow()/buildColHeader()). Switching
+    // rebuilds the whole row model (D.setCols), so preserve/restore the
+    // current top codepoint across the change instead of just re-rendering
+    // at the same pixel scrollTop.
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const nextCols = isMobile ? 8 : 16;
+    if (nextCols !== this.cols || isMobile !== this.mobile) {
+      const topCp = this.lastTopCp >= 0 ? this.lastTopCp : null;
+      this.cols = nextCols;
+      this.mobile = isMobile;
+      D.setCols(nextCols);
+      this.buildColHeader();
+      this.sizerEl.style.height = `${D.totalRows * this.rowH}px`;
+      if (topCp != null) this.scrollToCp(topCp, false);
+    }
+
+    // Desktop centers the colored columns (gutter : cells : spacer = 1 :
+    // COLS : 1), subtracting the row-address gutter's width twice: once for
+    // the left label column, once for the matching blank spacer on the
+    // right (see .col-header / .grid-row grid-template-columns). Mobile has
+    // no gutter column at all (dropped above), so the cells simply fill the
+    // full width.
+    const gutterWidth = this.mobile ? 0 : this.headerGutterEl.getBoundingClientRect().width;
     const usable = currentWidth - gutterWidth * 2;
     const nextRowH = Math.max(1, usable / D.COLS);
     const prevRowH = this.rowH;
@@ -127,8 +164,15 @@ class Grid {
     const base = D.rowToBaseCp(row);
     const el = document.createElement('div');
     el.className = 'grid-row';
-    const prefix = (base >> 4).toString(16).toUpperCase();
-    el.innerHTML = `<div class="gutter">U+${prefix}<span class="x">x</span></div>`;
+    // Mobile has no row-address gutter at all (each cell shows its own full
+    // "U+XXXX", making it redundant -- see buildColHeader()). Desktop keeps
+    // it, but the "U+XXx" + trailing-hex-digit combo only lines up when a
+    // row spans exactly one hex digit (16 cols); it's only ever 16 there
+    // (mobile is the only other case, and that has no gutter to build).
+    if (!this.mobile) {
+      const gutterLabel = `U+${(base >> 4).toString(16).toUpperCase()}<span class="x">x</span>`;
+      el.innerHTML = `<div class="gutter">${gutterLabel}</div>`;
+    }
 
     for (let col = 0; col < D.COLS; col++) {
       const cp = base + col;

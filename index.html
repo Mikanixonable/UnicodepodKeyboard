@@ -20,9 +20,24 @@
 <body>
   <div id="loading" class="loading">読み込み中…</div>
 
+  <!-- モバイル用トップバー（狭い画面でのみ表示。左右メニューをドロワーで開く） -->
+  <div class="mobile-bar">
+    <button type="button" id="menu-left-toggle" class="mobile-bar-btn" aria-label="設定メニューを開く">☰</button>
+    <div class="mobile-bar-center">
+      <div class="mobile-brand">
+        <span class="mobile-brand-icon" aria-hidden="true">U</span>
+        <span class="mobile-brand-title">Unicodepod Keyboard</span>
+      </div>
+      <span id="mobile-bar-count-slot" class="mobile-bar-count-slot"></span>
+    </div>
+    <button type="button" id="menu-right-toggle" class="mobile-bar-btn" aria-label="ブロック選択を開く">▦</button>
+  </div>
+  <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
   <div class="page">
     <!-- 左メニューゾーン -->
     <aside class="menu-zone menu-left">
+      <button type="button" class="drawer-close" data-drawer="left" aria-label="閉じる">×</button>
       <header class="site-header">
         <span class="site-icon" aria-hidden="true">U</span>
         <h1 class="site-title">Unicodepod Keyboard</h1>
@@ -38,7 +53,7 @@
         <div id="attr-legend" class="attr-legend"></div>
       </main>
       <div id="meta-description" class="meta-description">
-        <a href="https://x.com/Unicode_pod">bot (X)</a><a href="https://github.com/Mikanixonable/UnicodepodKeyboard">GitHubソースコード</a>
+        <a href="https://x.com/Unicode_pod">bot (X)</a><a href="https://github.com/Mikanixonable/UnicodepodKeyboard">コード (GitHub)</a>
       </div>
 
 
@@ -53,15 +68,15 @@
           autocomplete="off"></textarea>
         <div class="output-bar">
           <div class="btn-group">
-            <button type="button" id="copy-btn" class="btn">⧉ コピー</button>
-            <button type="button" id="paste-btn" class="btn" title="貼付け">⧈ 貼付け</button>
+            <button type="button" id="copy-btn" class="btn" title="コピー"><span class="btn-icon">⧉</span><span class="btn-label">コピー</span></button>
+            <button type="button" id="paste-btn" class="btn" title="貼付け"><span class="btn-icon">⧈</span><span class="btn-label">貼付け</span></button>
             <button type="button" id="caret-left-btn" class="btn" title="カーソルを左へ">←</button>
             <button type="button" id="caret-right-btn" class="btn" title="カーソルを右へ">→</button>
             <button type="button" id="del-btn" class="btn" title="1字削除">⌫</button>
             <button type="button" id="undo-btn" class="btn" title="元に戻す">↶</button>
             <button type="button" id="redo-btn" class="btn" title="やり直す">↷</button>
-            <button type="button" id="output-add-mylist-btn" class="btn" title="出力欄の全文字をマイリストへ追加">★＋ 全て追加</button>
-            <button type="button" id="output-remove-mylist-btn" class="btn" title="出力欄の全文字をマイリストから削除">★－ 全て削除</button>
+            <button type="button" id="output-add-mylist-btn" class="btn" title="出力欄の全文字をマイリストへ追加"><span class="btn-icon">★＋</span><span class="btn-label">全て追加</span></button>
+            <button type="button" id="output-remove-mylist-btn" class="btn" title="出力欄の全文字をマイリストから削除"><span class="btn-icon">★－</span><span class="btn-label">全て削除</span></button>
           </div>
           <span id="count" class="count"></span>
         </div>
@@ -104,6 +119,7 @@
 
     <!-- 右メニューゾーン -->
     <aside class="menu-zone menu-right">
+      <button type="button" class="drawer-close" data-drawer="right" aria-label="閉じる">×</button>
       <div id="jump-form-slot" class="jump-form-slot"></div>
       <div id="block-sidebar" class="block-sidebar"></div>
     </aside>

@@ -14,7 +14,10 @@
 // Covered ranges come from data/segments.js (generated), so scope lives in a
 // single place. Fallback matches the generator's default plane trimming.
 const SEGMENTS = window.UNICODE_SEGMENTS || [[0x0000, 0xFFFF], [0x10000, 0x323AF], [0xE0000, 0xE01EF]];
-const COLS = 16;
+// Mutable (not const): the mobile layout switches this to 8 (see
+// setCols()/grid.js), which changes how many codepoints fit per row and
+// therefore the whole row model below (segRows/totalRows).
+let COLS = 16;
 const ROW_H = 58; // px, must match --row-h in CSS
 
 let blocks = [];
@@ -392,8 +395,21 @@ function blockLabel(name) {
 
 // ---- row model (virtual grid) -------------------------------------------
 
-const segRows = SEGMENTS.map(([s, e]) => Math.ceil((e - s + 1) / COLS));
-const totalRows = segRows.reduce((a, b) => a + b, 0);
+function computeSegRows() {
+  return SEGMENTS.map(([s, e]) => Math.ceil((e - s + 1) / COLS));
+}
+
+let segRows = computeSegRows();
+let totalRows = segRows.reduce((a, b) => a + b, 0);
+
+// Switches the row width (16 on desktop, 8 on mobile -- see grid.js), and
+// recomputes the row model to match. No-op if unchanged.
+function setCols(n) {
+  if (n === COLS) return;
+  COLS = n;
+  segRows = computeSegRows();
+  totalRows = segRows.reduce((a, b) => a + b, 0);
+}
 
 function rowToBaseCp(row) {
   let acc = 0;
@@ -555,8 +571,8 @@ function utf16Units(cp) {
 
 window.App = window.App || {};
 window.App.Data = {
-  SEGMENTS, COLS, ROW_H, segRows, totalRows,
-  loadCore, ensureNames, ensureDescriptions,
+  SEGMENTS, ROW_H,
+  loadCore, ensureNames, ensureDescriptions, setCols,
   hex, inScope, categoryOf, isAssigned, isEmptyCell, isInsertable, isBlankGlyph,
   isCombining, glyphFor, controlAbbr, blockOf, getBlocks, sampleGlyphs, planeOf, planeInfo, rowToBaseCp, cpToRow,
   neighborInsertable, algorithmicName, nameSync, getName, descriptionSync, getDescription, categoryDesc,
@@ -565,5 +581,12 @@ window.App.Data = {
   GROUP_LABELS, groupLabel,
   ageOf, eraOf, eraLabel, ERAS, dominantEraForRange, groupForMode, blockGroupForMode,
 };
+// COLS/segRows/totalRows change at runtime (setCols), so expose them as live
+// getters instead of snapshotting their value into the object above.
+Object.defineProperties(window.App.Data, {
+  COLS: { enumerable: true, get: () => COLS },
+  segRows: { enumerable: true, get: () => segRows },
+  totalRows: { enumerable: true, get: () => totalRows },
+});
 
 })();

@@ -13,6 +13,10 @@
   --app-width: 900px;
   --gutter: 4.8rem;
   --cell-size: 58px;
+  /* codepoints per grid row; grid.js switches this to 8 on mobile (see the
+     max-width:768px media query) via D.setCols(), which also rebuilds the
+     row model to match. */
+  --cols: 16;
   /* glyph font: default follows the OS; toggled to Noto via [data-font] */
   --font-glyph: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     "Noto Sans", "Noto Sans CJK JP", "Noto Color Emoji", sans-serif;
@@ -281,6 +285,26 @@ button {
 #output:focus {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
+}
+
+/* Custom caret shown only when #output isn't actually focused (mobile --
+   see updateFakeCaret() in output.js for why). .ta-mirror is never visible,
+   just used to measure where the caret marker lands. */
+.ta-mirror {
+  pointer-events: none;
+}
+
+.fake-caret {
+  position: absolute;
+  display: none;
+  width: 2px;
+  background: var(--accent);
+  pointer-events: none;
+  animation: fake-caret-blink 1s step-end infinite;
+}
+
+@keyframes fake-caret-blink {
+  50% { opacity: 0; }
 }
 
 .output-bar {
@@ -1172,7 +1196,7 @@ button {
 .col-header {
   flex: none;
   display: grid;
-  grid-template-columns: var(--gutter) repeat(16, var(--cell-size)) var(--gutter);
+  grid-template-columns: var(--gutter) repeat(var(--cols), var(--cell-size)) var(--gutter);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   color: var(--muted);
@@ -1216,7 +1240,7 @@ button {
 
 .grid-row {
   display: grid;
-  grid-template-columns: var(--gutter) repeat(16, var(--cell-size)) var(--gutter);
+  grid-template-columns: var(--gutter) repeat(var(--cols), var(--cell-size)) var(--gutter);
   height: var(--cell-size);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
@@ -1770,13 +1794,246 @@ button {
   transform: translate(-50%, 0);
 }
 
+/* ---------- mobile: hidden by default, activated in the media query below.
+   The left/right menu zones become slide-in drawers toggled from a top bar;
+   the center content zone fills the screen. ---------- */
+.mobile-bar { display: none; }
+.drawer-backdrop { display: none; }
+.drawer-close { display: none; }
+
+@media (max-width: 768px) {
+  /* body becomes a vertical stack: fixed top bar + full-height content */
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-bar-btn {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--elevated);
+    color: var(--text);
+    font-size: 1.4rem;
+    line-height: 1;
+  }
+
+  .mobile-bar-btn:active { transform: translateY(1px); }
+
+  /* compact brand (icon+title) + #count share the middle of the bar, stacked
+     into two short lines so they fit in the same height as the hamburger/
+     block-picker buttons either side. #count itself is moved here from
+     .output-bar via JS (setupResponsiveCount in app.js). */
+  .mobile-bar-center {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+  }
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+  }
+
+  .mobile-brand-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: .62rem;
+  }
+
+  .mobile-brand-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .68rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .mobile-bar-count-slot {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: .66rem;
+  }
+
+  /* icon-only action buttons: hide the text label, keep the icon + a11y
+     tooltip (title attribute) so the row doesn't overflow/wrap on narrow
+     screens. */
+  .output-bar .btn-label {
+    display: none;
+  }
+
+  /* tabs shrunk ~70% so all four titles stay on one line without wrapping */
+  .mode-tab {
+    font-size: .7rem;
+    white-space: nowrap;
+    padding: 6px 10px;
+  }
+
+  /* 8 codepoints per row instead of 16 (see grid.js refreshLayout /
+     D.setCols) -- easier to tap on a narrow screen. Also applied to the
+     other three tabs' character boards for consistency. */
+  :root {
+    --cols: 8;
+  }
+
+  .fav-grid {
+    grid-template-columns: repeat(var(--cols), 1fr);
+  }
+
+  /* No row-address gutter column at all on mobile (dropped left AND right --
+     desktop only drops the right spacer): each cell already shows its own
+     full "U+XXXX" (see the .cell .cp rule below), making a separate address
+     column redundant. See grid.js buildRow()/buildColHeader(). */
+  .grid-row {
+    grid-template-columns: repeat(var(--cols), var(--cell-size));
+  }
+
+  /* Column-index header dropped entirely (see grid.js buildColHeader): with
+     no row-address gutter left to label, and each cell showing its own full
+     "U+XXXX", it has nothing left to add. grid.js leaves it empty; collapse
+     its box so it doesn't leave a blank bar. */
+  .col-header {
+    display: none;
+  }
+
+  /* only the content zone stays in flow; the menu zones are pulled out into
+     fixed drawers, so collapse the 3-column grid to a single column. */
+  .page {
+    grid-template-columns: 1fr;
+    height: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .content-zone {
+    border-left: none;
+    border-right: none;
+  }
+
+  /* タイトル・アイコンはモバイルでは省略 */
+  .site-header { display: none; }
+
+  .menu-left,
+  .menu-right {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 85;
+    width: min(86vw, 330px);
+    padding-top: 44px;
+    background: var(--bg);
+    box-shadow: 0 0 40px rgba(0, 0, 0, .5);
+    transition: transform .25s ease;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .menu-left {
+    left: 0;
+    transform: translateX(-100%);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+
+  .menu-right {
+    right: 0;
+    transform: translateX(100%);
+    border-left: 1px solid var(--border);
+  }
+
+  .menu-left.open,
+  .menu-right.open { transform: translateX(0); }
+
+  .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 84;
+    background: rgba(0, 0, 0, .5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+  }
+
+  .drawer-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .drawer-close {
+    position: absolute;
+    top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--elevated) 70%, transparent);
+    color: var(--muted);
+    font-size: 1.44rem;
+    line-height: 1;
+    z-index: 1;
+  }
+
+  .menu-left .drawer-close { right: 8px; }
+  .menu-right .drawer-close { left: 8px; }
+
+  /* Detail modal: .modal itself used to also be a scroll container
+     (overflow-y:auto), and its 100vh-based max-height calc could exceed the
+     *visible* viewport once the mobile browser's chrome (URL bar, etc.)
+     shrinks it -- producing two nested scrollbars. Switch to dvh (tracks the
+     actual visible viewport) and make .modal-box the only scroller. */
+  .modal {
+    overflow: hidden;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .modal-box {
+    width: min(94vw, 440px);
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+}
+
 @media (max-width: 560px) {
   :root {
     --gutter: 3.6rem;
-  }
-
-  .cell .cp {
-    display: none;
   }
 
   .info-row {

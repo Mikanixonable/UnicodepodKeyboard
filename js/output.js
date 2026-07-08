@@ -30,8 +30,10 @@ class OutputArea {
     this.hi = 0;
 
     this.ta.addEventListener('input', () => this.onUserInput());
-    this.ta.addEventListener('blur', () => this.commit());
+    this.ta.addEventListener('blur', () => { this.commit(); this.updateFakeCaret(); });
+    this.ta.addEventListener('focus', () => this.updateFakeCaret());
     this.updateCount();
+    this.setupFakeCaret();
   }
 
   snapshot() {
@@ -67,6 +69,67 @@ class OutputArea {
     this.ta.setSelectionRange(p, p);
   }
 
+  // Focusing the textarea pops the mobile virtual keyboard, which should
+  // only happen when the user deliberately taps the output area itself --
+  // not on every programmatic edit (grid tap, undo, caret buttons, etc.).
+  // On desktop there's no keyboard to avoid, so keep focusing there as
+  // before (keeps the blinking caret visible after each edit).
+  maybeFocus() {
+    if (!window.matchMedia('(max-width: 768px)').matches) this.ta.focus();
+  }
+
+  // A custom blinking caret, shown only when the textarea isn't actually
+  // focused (mobile: maybeFocus() deliberately skips focus() on programmatic
+  // edits to avoid popping the keyboard, so the browser's native caret never
+  // appears there -- leaving no visual cue for where the next tap will
+  // insert). Positioned with a hidden mirror div that replicates the
+  // textarea's box/font metrics, since a <textarea> can't host child nodes
+  // to measure against directly.
+  setupFakeCaret() {
+    const wrap = this.ta.parentElement;
+    this.mirror = document.createElement('div');
+    this.mirror.className = 'ta-mirror';
+    this.mirror.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(this.mirror);
+    this.caretEl = document.createElement('div');
+    this.caretEl.className = 'fake-caret';
+    wrap.appendChild(this.caretEl);
+    this.updateFakeCaret();
+  }
+
+  updateFakeCaret() {
+    if (!window.matchMedia('(max-width: 768px)').matches || document.activeElement === this.ta) {
+      this.caretEl.style.display = 'none';
+      return;
+    }
+    const cs = getComputedStyle(this.ta);
+    const props = [
+      'boxSizing', 'width', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+      'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+      'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing',
+    ];
+    for (const p of props) this.mirror.style[p] = cs[p];
+    this.mirror.style.position = 'absolute';
+    this.mirror.style.visibility = 'hidden';
+    this.mirror.style.whiteSpace = 'pre-wrap';
+    this.mirror.style.wordWrap = 'break-word';
+    this.mirror.style.left = `${this.ta.offsetLeft}px`;
+    this.mirror.style.top = `${this.ta.offsetTop}px`;
+    this.mirror.style.height = 'auto';
+
+    const pos = this.ta.selectionStart;
+    this.mirror.textContent = this.ta.value.slice(0, pos);
+    const marker = document.createElement('span');
+    marker.textContent = '​';
+    this.mirror.appendChild(marker);
+
+    const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+    this.caretEl.style.left = `${this.ta.offsetLeft + marker.offsetLeft - this.ta.scrollLeft}px`;
+    this.caretEl.style.top = `${this.ta.offsetTop + marker.offsetTop - this.ta.scrollTop}px`;
+    this.caretEl.style.height = `${lineHeight}px`;
+    this.caretEl.style.display = 'block';
+  }
+
   insert(str) {
     this.commit();
     const { selectionStart: s, selectionEnd: e, value } = this.ta;
@@ -75,7 +138,8 @@ class OutputArea {
     this.ta.setSelectionRange(pos, pos);
     this.push();
     this.updateCount();
-    this.ta.focus();
+    this.maybeFocus();
+    this.updateFakeCaret();
   }
 
   deleteBackward() {
@@ -94,20 +158,18 @@ class OutputArea {
     }
     this.push();
     this.updateCount();
-    this.ta.focus();
+    this.maybeFocus();
+    this.updateFakeCaret();
   }
 
   // Move the caret by one grapheme left (-1) or right (+1); collapses an
   // existing selection to its near edge first, like native arrow-key behavior.
   moveCaret(dir) {
-    this.ta.focus();
     const { selectionStart: s, selectionEnd: e, value } = this.ta;
     if (s !== e) {
       const p = dir < 0 ? s : e;
       this.ta.setSelectionRange(p, p);
-      return;
-    }
-    if (dir < 0) {
+    } else if (dir < 0) {
       if (s === 0) return;
       const gs = graphemes(value.slice(0, s));
       const last = gs[gs.length - 1] || '';
@@ -120,6 +182,8 @@ class OutputArea {
       const p = s + first.length;
       this.ta.setSelectionRange(p, p);
     }
+    this.maybeFocus();
+    this.updateFakeCaret();
   }
 
   clearAll() {
@@ -129,7 +193,8 @@ class OutputArea {
     this.ta.setSelectionRange(0, 0);
     this.push();
     this.updateCount();
-    this.ta.focus();
+    this.maybeFocus();
+    this.updateFakeCaret();
   }
 
   restore(snap) {
@@ -137,7 +202,8 @@ class OutputArea {
     const p = Math.min(snap.sel, snap.value.length);
     this.ta.setSelectionRange(p, p);
     this.updateCount();
-    this.ta.focus();
+    this.maybeFocus();
+    this.updateFakeCaret();
   }
 
   undo() {
