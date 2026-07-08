@@ -134,7 +134,9 @@
     updateFav() {
       const on = this.fav.has(this.cp);
       const label = this.fav.activeLabel || 'マイリスト';
-      this.favBtn.textContent = on ? `${label}から外す` : `${label}に追加`;
+      this.favBtn.textContent = '★';
+      this.favBtn.title = on ? `${label}から外す` : `${label}に追加`;
+      this.favBtn.setAttribute('aria-label', this.favBtn.title);
       this.favBtn.classList.toggle('on', on);
     }
 
