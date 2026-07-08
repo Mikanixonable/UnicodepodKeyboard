@@ -57,7 +57,7 @@ class Grid {
     if (currentWidth <= 0) return;
     const gutterWidth = this.headerGutterEl.getBoundingClientRect().width;
     const usable = currentWidth - gutterWidth;
-    const nextRowH = Math.max(1, Math.floor(usable / D.COLS));
+    const nextRowH = Math.max(1, usable / D.COLS);
     const prevRowH = this.rowH;
     if (nextRowH !== prevRowH) {
       this.rowH = nextRowH;

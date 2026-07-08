@@ -1,6 +1,6 @@
 :root {
-  --bg: #0f1115;
-  --panel: #161922;
+  --bg: #1d2024;
+  --panel: var(--bg);
   --panel-2: #1c2029;
   --elevated: #222736;
   --border: #2a2f3a;
@@ -10,25 +10,24 @@
   --accent-ink: #0b1220;
   --fav: #ffcf5c;
   --danger: #f87171;
-  --app-width: 1240px;
+  --app-width: 1024px;
   --gutter: 4.8rem;
   --cell-size: 58px;
-  --grid-cols: var(--gutter) repeat(16, var(--cell-size));
   /* glyph font: default follows the OS; toggled to Noto via [data-font] */
   --font-glyph: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     "Noto Sans", "Noto Sans CJK JP", "Noto Color Emoji", sans-serif;
 
   /* attribute-group colors: shared by grid cells and the block picker swatch */
-  --grp-letter: #60a5fa;
-  --grp-mark: #34d399;
-  --grp-number: #fbbf24;
-  --grp-punct: #a78bfa;
-  --grp-symbol: #f472b6;
+  --grp-letter: #d0c8b0;
+  --grp-mark: #b5afc7;
+  --grp-number: #edf5f3;
+  --grp-punct: #8f9394;
+  --grp-symbol: #cd91b0;
   --grp-emoji: #fb7185;
-  --grp-separator: #67e8f9;
-  --grp-control: #ef4444;
+  --grp-separator: #87bfc6;
+  --grp-control: #8c4848;
   --grp-format: #9ca3af;
-  --grp-surrogate: #c084fc;
+  --grp-surrogate: #8970a1;
   --grp-private: #eab308;
   --grp-unassigned: #52525b;
 }
@@ -271,7 +270,7 @@ button { font: inherit; cursor: pointer; }
 .grid { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .col-header {
-  flex: none; display: grid; grid-template-columns: var(--grid-cols);
+  flex: none; display: grid; grid-template-columns: var(--gutter) repeat(16, var(--cell-size));
   background: var(--panel); border-bottom: 1px solid var(--border);
   color: var(--muted); font-size: .72rem; scrollbar-gutter: stable;
 }
@@ -288,7 +287,7 @@ button { font: inherit; cursor: pointer; }
 .grid-rows { position: absolute; top: 0; left: 0; right: 0; will-change: transform; }
 
 .grid-row {
-  display: grid; grid-template-columns: var(--grid-cols);
+  display: grid; grid-template-columns: var(--gutter) repeat(16, var(--cell-size));
   height: var(--cell-size);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
