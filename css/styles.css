@@ -199,6 +199,13 @@ button { font: inherit; cursor: pointer; }
   background: var(--elevated); border: 1px solid var(--border); border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0,0,0,.45); overflow: hidden;
 }
+.plane-jump { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 8px 0; }
+.plane-jump-btn {
+  padding: 4px 9px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--panel-2); color: var(--muted); font-size: .72rem;
+}
+.plane-jump-btn:hover { border-color: var(--accent); color: var(--text); }
+
 .block-search {
   margin: 8px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--panel-2); color: var(--text);
@@ -242,6 +249,12 @@ button { font: inherit; cursor: pointer; }
   list-style: none; margin: 0; padding: 0 8px 8px; overflow-y: auto;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 4px;
 }
+.plane-header {
+  grid-column: 1 / -1; padding: 12px 4px 4px; margin-top: 4px;
+  border-top: 1px solid var(--border); font-size: .74rem; font-weight: 700; color: var(--muted);
+}
+.plane-header:first-child { margin-top: 0; border-top: none; }
+.plane-header[hidden] { display: none; }
 .block-item {
   display: flex; align-items: center; gap: 7px; padding: 7px 8px; border-radius: 7px;
   cursor: pointer; border: 1px solid transparent; min-width: 0;

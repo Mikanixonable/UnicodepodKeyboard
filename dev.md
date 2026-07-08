@@ -36,4 +36,33 @@
 - 見た目
 ダークモードとライトモードを切り替えられるように
 全体的にバイブコ臭が強い、シンプル、フラットなデザインにする
+
 block-headerの縦幅とコードポイントで移動の縦幅を統一して
+
+Unicodeの領域の選択は、現在はブロックが並べて表示されているが、面のグループの中にブロックが表示されるようにして。
+例えば以下のような面がある
+第0面 (Plane 0): 基本多言語面 (Basic Multilingual Plane; BMP)
+第1面 (Plane 1): 追加多言語面 (Supplementary Multilingual Plane; SMP)
+第2面 (Plane 2): 追加漢字面 (Supplementary Ideographic Plane; SIP)
+第3面 (Plane 3): 第三漢字面 (Tertiary Ideographic Plane; TIP)
+第14面 (Plane 14): 追加特殊用途面 (Supplementary Special‐purpose Plane; SSP)
+第15-16面 (Plane 15-16): 私用面
+
+- 西夏文字、変体仮名を表示したい
+
+欲しいタブ
+- shapoco的な装飾文字タブ
+- unicode code converter
+- 文字化け再現、複合
+- SHIFT JIS
+
+tai yo が 未割り当てなのはなぜ？
+文字の公式の説明文を表示したい
+どの時代に採用されたのか表示したい
+ー未割り当ての制御文字も詳細画面と表示が欲しい
+
+領域選択ポップアップの上部に、面のスクロール位置に飛ぶボタンを追加
+
+
+
+現在使われていない面にも飛べるようにして。現在使われている面はボタンの色を

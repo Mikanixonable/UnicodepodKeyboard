@@ -10,6 +10,21 @@ const GROUP_LABELS = {
   format: ['書式', 'Format'], surrogate: ['サロゲート', 'Surrogate'], private: ['私用領域', 'Private Use'], unassigned: ['未割り当て', 'Unassigned'],
 };
 
+const PLANE_LABELS = {
+  0: ['基本多言語面', 'Basic Multilingual Plane (BMP)'],
+  1: ['追加多言語面', 'Supplementary Multilingual Plane (SMP)'],
+  2: ['追加漢字面', 'Supplementary Ideographic Plane (SIP)'],
+  3: ['第三漢字面', 'Tertiary Ideographic Plane (TIP)'],
+  14: ['追加特殊用途面', 'Supplementary Special-purpose Plane (SSP)'],
+  15: ['私用面 A', 'Supplementary Private Use Area-A'],
+  16: ['私用面 B', 'Supplementary Private Use Area-B'],
+};
+
+function planeLabel(p) {
+  const [ja, en] = PLANE_LABELS[p] || ['未割り当て面', 'Unassigned Plane'];
+  return `第${p}面（Plane ${p}）: ${ja}（${en}）`;
+}
+
 function legendHtml() {
   return Object.entries(GROUP_LABELS)
     .map(([g, [ja, en]]) =>
@@ -42,6 +57,7 @@ class BlockHeader {
         </form>
       </div>
       <div class="block-pop" hidden>
+        <div class="plane-jump"></div>
         <input type="text" class="block-search" placeholder="ブロックを検索…" aria-label="ブロック検索">
         <div class="block-legend">${this.legendHtml()}</div>
         <ul class="block-list" role="listbox"></ul>
@@ -52,12 +68,14 @@ class BlockHeader {
     this.nameJaEl = root.querySelector('.block-btn .name-ja');
     this.nameEnEl = root.querySelector('.block-btn .name-en');
     this.pop = root.querySelector('.block-pop');
+    this.planeJumpEl = root.querySelector('.plane-jump');
     this.search = root.querySelector('.block-search');
     this.listEl = root.querySelector('.block-list');
     this.jumpForm = root.querySelector('.jump');
     this.jumpInput = root.querySelector('.jump-input');
 
     this.buildList();
+    this.buildPlaneJump();
 
     this.btn.addEventListener('click', () => this.toggle());
     this.search.addEventListener('input', () => this.filter(this.search.value));
@@ -78,7 +96,19 @@ class BlockHeader {
 
   buildList() {
     const frag = document.createDocumentFragment();
+    let lastPlane = null;
+    this.planeHeaders = [];
     for (const b of D.getBlocks()) {
+      const plane = b.s >>> 16;
+      if (plane !== lastPlane) {
+        lastPlane = plane;
+        const header = document.createElement('li');
+        header.className = 'plane-header';
+        header.role = 'presentation';
+        header.textContent = planeLabel(plane);
+        frag.appendChild(header);
+        this.planeHeaders.push({ plane, el: header });
+      }
       const { ja, en } = D.blockLabel(b.n);
       const group = D.blockGroup(b);
       const li = document.createElement('li');
@@ -100,13 +130,40 @@ class BlockHeader {
       frag.appendChild(li);
     }
     this.listEl.appendChild(frag);
-    this.items = [...this.listEl.children];
+    this.items = [...this.listEl.querySelectorAll('.block-item')];
+  }
+
+  buildPlaneJump() {
+    this.planeJumpEl.innerHTML = this.planeHeaders
+      .map(({ plane }) => `<button type="button" class="plane-jump-btn" data-plane="${plane}" title="${escapeHtml(planeLabel(plane))}">第${plane}面</button>`)
+      .join('');
+    for (const btn of this.planeJumpEl.children) {
+      btn.addEventListener('click', () => {
+        const plane = Number(btn.dataset.plane);
+        const target = this.planeHeaders.find((h) => h.plane === plane);
+        if (!target) return;
+        this.search.value = '';
+        this.filter('');
+        target.el.scrollIntoView({ block: 'start' });
+      });
+    }
   }
 
   filter(q) {
     const s = q.trim().toLowerCase();
-    for (const li of this.items)
-      li.hidden = s ? !li.textContent.toLowerCase().includes(s) : false;
+    let header = null, headerVisible = false;
+    for (const el of this.listEl.children) {
+      if (el.classList.contains('plane-header')) {
+        if (header) header.hidden = !headerVisible;
+        header = el;
+        headerVisible = false;
+        continue;
+      }
+      const visible = !s || el.textContent.toLowerCase().includes(s);
+      el.hidden = !visible;
+      if (visible) headerVisible = true;
+    }
+    if (header) header.hidden = !headerVisible;
   }
 
   // Parse "1F600", "U+1F600", "u+41", "0x41" -> codepoint number (hex), or null.
