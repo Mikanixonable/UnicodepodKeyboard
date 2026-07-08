@@ -123,9 +123,6 @@ html, body {
   margin: 0;
 }
 body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
@@ -141,28 +138,48 @@ button { font: inherit; cursor: pointer; }
   background: var(--bg); color: var(--muted); z-index: 100;
 }
 
-/* ---------- output ---------- */
+/* ---------- page layout: center content zone + left/right menu zones,
+   using the site's full height ---------- */
+.page {
+  display: grid; grid-template-columns: 1fr minmax(0, var(--app-width)) 1fr;
+  height: 100vh; height: 100dvh;
+}
+.menu-zone { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.menu-left { align-items: center; }
+.menu-right { align-items: flex-end; }
+.content-zone {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
+  border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+}
+
+/* logo centered above the title, both centered in the left menu zone */
 .site-header {
-  flex: none; align-self: center; width: min(100%, var(--app-width));
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px clamp(10px, 3vw, 20px); background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 20px clamp(10px, 3vw, 20px) 10px;
 }
 .site-icon {
   flex: none; display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 8px; background: var(--accent);
-  color: #fff; font-weight: 700; font-size: .95rem;
+  width: 40px; height: 40px; border-radius: 12px; background: var(--accent);
+  color: #fff; font-weight: 700; font-size: 1.3rem;
 }
-.site-title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); }
+.site-title { margin: 0; font-size: .82rem; font-weight: 700; color: var(--text); text-align: center; }
 
+/* ---------- output ---------- */
 .output-area {
+  position: relative;
   flex: none;
-  align-self: center;
-  width: min(100%, var(--app-width));
   padding: 12px clamp(10px, 3vw, 20px);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
 }
+.clear-circle-btn {
+  position: absolute; top: 20px; right: clamp(18px, 3vw, 28px); z-index: 1;
+  width: 26px; height: 26px; border-radius: 50%; border: none;
+  background: color-mix(in srgb, var(--elevated) 65%, transparent);
+  color: var(--muted); font-size: 1rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.clear-circle-btn:hover { background: color-mix(in srgb, var(--danger) 25%, transparent); color: var(--danger); }
 #output {
   width: 100%;
   resize: vertical;
@@ -201,10 +218,6 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------- input area ---------- */
 .input-area { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.input-area {
-  align-self: center;
-  width: min(100%, var(--app-width));
-}
 
 .mode-tabs {
   flex: none; display: flex; align-items: flex-end; gap: 4px;
@@ -267,13 +280,23 @@ button { font: inherit; cursor: pointer; }
 .jump-go:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 
-.block-pop {
-  position: absolute; z-index: 30; top: calc(100% - 4px); left: clamp(10px, 3vw, 20px);
-  width: min(760px, calc(100% - 24px)); max-height: 70vh; display: flex; flex-direction: column;
-  background: var(--elevated); border: 1px solid var(--border); border-radius: 12px;
+/* block picker: full-screen modal (not an anchored dropdown), using as much
+   of the site's height/width as possible so more columns of blocks fit */
+.block-pop { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; }
+.block-pop-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
+.block-pop-box {
+  position: relative; z-index: 1; display: flex; flex-direction: column;
+  width: min(96vw, 1300px); height: min(94vh, 94dvh);
+  background: var(--elevated); border: 1px solid var(--border); border-radius: 14px;
   box-shadow: 0 12px 40px rgba(0,0,0,.45); overflow: hidden;
 }
-.plane-jump { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 8px 0; }
+.block-pop-header { display: flex; align-items: flex-start; gap: 8px; padding: 10px 10px 0; }
+.block-pop-close {
+  flex: none; width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 50%;
+  background: var(--panel-2); color: var(--text); font-size: 1rem;
+}
+.block-pop-close:hover { border-color: var(--accent); }
+.plane-jump { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; }
 .plane-jump-btn {
   padding: 4px 9px; border: 1px solid var(--border); border-radius: 999px;
   background: var(--panel-2); color: var(--muted); font-size: .72rem;
@@ -312,6 +335,12 @@ button { font: inherit; cursor: pointer; }
 .legend-items { min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; color: var(--muted); }
 .legend-none { font-style: italic; }
+/* legend items: English stacked below the Japanese, both small */
+.legend-label { display: flex; flex-direction: column; line-height: 1.2; }
+.legend-label .legend-ja { font-size: .72rem; }
+.legend-label .legend-en { display: block; font-size: .62rem; }
+/* other (non-legend) uses of .legend-en stay inline, e.g. the character
+   detail modal's "文字の種類"/"追加時期" rows */
 .legend-en { font-size: .64rem; opacity: .75; }
 
 .swatch {
@@ -341,10 +370,11 @@ button { font: inherit; cursor: pointer; }
 .swatch[data-group="e9"]  { --grp-color: var(--era-e9); }
 .swatch[data-group="e10"] { --grp-color: var(--era-e10); }
 
-/* 2D palette: many blocks per row instead of one long vertical list */
+/* 2D palette: many blocks per row instead of one long vertical list. minmax
+   basis tuned so the enlarged (modal) width yields ~6 columns. */
 .block-list {
-  list-style: none; margin: 0; padding: 0 8px 8px; overflow-y: auto;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 4px;
+  list-style: none; margin: 0; padding: 0 8px 8px; overflow-y: auto; flex: 1;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px;
 }
 .plane-header {
   grid-column: 1 / -1; padding: 12px 4px 4px; margin-top: 4px;
@@ -353,10 +383,13 @@ button { font: inherit; cursor: pointer; }
 .plane-header:first-child { margin-top: 0; border-top: none; }
 .plane-header[hidden] { display: none; }
 .block-item {
-  display: flex; align-items: center; gap: 7px; padding: 7px 8px; border-radius: 7px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 5px; padding: 7px 8px; border-radius: 7px;
   cursor: pointer; border: 1px solid transparent; min-width: 0;
   background: color-mix(in srgb, var(--grp-color, transparent) 10%, transparent);
 }
+.block-item-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.block-item-samples { display: flex; gap: 8px; padding-left: calc(.6rem + 7px); font-family: var(--font-glyph); }
+.sample-glyph { font-size: 1.1rem; line-height: 1; color: var(--text); opacity: .85; }
 .block-item:hover { border-color: var(--border); background: color-mix(in srgb, var(--grp-color, transparent) 20%, var(--panel-2)); }
 .block-item.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .block-item[hidden] { display: none; }

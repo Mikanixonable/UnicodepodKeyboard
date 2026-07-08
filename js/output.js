@@ -90,6 +90,31 @@ class OutputArea {
     this.ta.focus();
   }
 
+  // Move the caret by one grapheme left (-1) or right (+1); collapses an
+  // existing selection to its near edge first, like native arrow-key behavior.
+  moveCaret(dir) {
+    this.ta.focus();
+    const { selectionStart: s, selectionEnd: e, value } = this.ta;
+    if (s !== e) {
+      const p = dir < 0 ? s : e;
+      this.ta.setSelectionRange(p, p);
+      return;
+    }
+    if (dir < 0) {
+      if (s === 0) return;
+      const gs = graphemes(value.slice(0, s));
+      const last = gs[gs.length - 1] || '';
+      const p = s - last.length;
+      this.ta.setSelectionRange(p, p);
+    } else {
+      if (s === value.length) return;
+      const gs = graphemes(value.slice(s));
+      const first = gs[0] || '';
+      const p = s + first.length;
+      this.ta.setSelectionRange(p, p);
+    }
+  }
+
   clearAll() {
     if (!this.ta.value) return;
     this.commit();

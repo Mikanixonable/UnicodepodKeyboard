@@ -45,7 +45,7 @@ async function main() {
   const output = new OutputArea($('#output'), {
     countEl: $('#count'),
     onCopyDone: () => showToast('コピーしました'),
-    onPasteFail: () => showToast('クリップボードを読み取れませんでした（Cmd/Ctrl+V で貼り付けてください）'),
+    onPasteFail: () => showToast('クリップボードを読み取れませんでした（Cmd/Ctrl+V で貼付けてください）'),
     onChange: drawCurrent,
   });
 
@@ -54,6 +54,8 @@ async function main() {
 
   $('#copy-btn').addEventListener('click', () => output.copy());
   $('#paste-btn').addEventListener('click', () => output.paste());
+  $('#caret-left-btn').addEventListener('click', () => output.moveCaret(-1));
+  $('#caret-right-btn').addEventListener('click', () => output.moveCaret(1));
   $('#del-btn').addEventListener('click', () => output.deleteBackward());
   $('#clear-btn').addEventListener('click', () => output.clearAll());
   $('#undo-btn').addEventListener('click', () => output.undo());

@@ -19,70 +19,82 @@
 <body>
   <div id="loading" class="loading">読み込み中…</div>
 
-  <!-- サイトタイトル -->
-  <header class="site-header">
-    <span class="site-icon" aria-hidden="true">U</span>
-    <h1 class="site-title">Unicodepod Keyboard</h1>
-  </header>
+  <div class="page">
+    <!-- 左メニューゾーン -->
+    <aside class="menu-zone menu-left">
+      <header class="site-header">
+        <span class="site-icon" aria-hidden="true">U</span>
+        <h1 class="site-title">Unicodepod Keyboard</h1>
+      </header>
+    </aside>
 
-  <!-- 出力部 -->
-  <section class="output-area" aria-label="出力部">
-    <textarea id="output" rows="3" placeholder="出力部" spellcheck="false" autocapitalize="off"
-      autocomplete="off"></textarea>
-    <div class="output-bar">
-      <div class="btn-group">
-        <button type="button" id="copy-btn" class="btn">⧉ コピー</button>
-        <button type="button" id="paste-btn" class="btn" title="貼り付け">⧈ 貼り付け</button>
-        <button type="button" id="del-btn" class="btn" title="1字削除">⌫ 1字削除</button>
-        <button type="button" id="clear-btn" class="btn" title="全削除">✖︎ 全消去</button>
-        <button type="button" id="undo-btn" class="btn" title="元に戻す">↶ 元に戻す</button>
-        <button type="button" id="redo-btn" class="btn" title="やり直す">↷ やり直す</button>
-      </div>
-      <span id="count" class="count"></span>
+    <!-- 中央コンテンツゾーン -->
+    <div class="content-zone">
+      <!-- 出力部 -->
+      <section class="output-area" aria-label="出力部">
+        <button type="button" id="clear-btn" class="clear-circle-btn" title="全削除">×</button>
+        <textarea id="output" rows="3" placeholder="出力部" spellcheck="false" autocapitalize="off"
+          autocomplete="off"></textarea>
+        <div class="output-bar">
+          <div class="btn-group">
+            <button type="button" id="copy-btn" class="btn">⧉ コピー</button>
+            <button type="button" id="paste-btn" class="btn" title="貼付け">⧈ 貼付け</button>
+            <button type="button" id="caret-left-btn" class="btn" title="カーソルを左へ">←</button>
+            <button type="button" id="caret-right-btn" class="btn" title="カーソルを右へ">→</button>
+            <button type="button" id="del-btn" class="btn" title="1字削除">⌫ 1字削除</button>
+            <button type="button" id="undo-btn" class="btn" title="元に戻す">↶ 元に戻す</button>
+            <button type="button" id="redo-btn" class="btn" title="やり直す">↷ やり直す</button>
+          </div>
+          <span id="count" class="count"></span>
+        </div>
+      </section>
+
+      <!-- 入力部 -->
+      <section class="input-area" aria-label="入力部">
+        <div class="mode-tabs" role="tablist">
+          <button type="button" class="mode-tab active" data-mode="all" role="tab">符号表</button>
+          <button type="button" class="mode-tab" data-mode="current" role="tab">入力内容</button>
+          <button type="button" class="mode-tab" data-mode="history" role="tab">入力履歴</button>
+          <button type="button" class="mode-tab" data-mode="fav" role="tab">マイリスト</button>
+          <div class="font-toggle" role="group" aria-label="表示フォント">
+            <span class="font-label">フォント</span>
+            <button type="button" class="font-opt" data-font="system">システム</button>
+            <button type="button" class="font-opt" data-font="noto">Noto</button>
+            <button type="button" class="font-opt" data-font="extended" title="西夏文字・変体仮名など、希少スクリプト用フォントを同梱(約6MB)">拡張</button>
+          </div>
+        </div>
+
+        <div id="attr-legend" class="attr-legend"></div>
+
+        <div id="panel-all" class="panel">
+          <div id="block-header" class="block-header"></div>
+          <div id="grid" class="grid"></div>
+        </div>
+
+        <div id="panel-current" class="panel" hidden>
+          <div class="board-bar">
+            <span class="board-hint">現在、出力欄で使われている文字（出現順）</span>
+          </div>
+          <div id="current-board" class="fav-board"></div>
+        </div>
+
+        <div id="panel-history" class="panel" hidden>
+          <div class="board-bar">
+            <span class="board-hint">最近入力した文字（新しい順）</span>
+            <button type="button" id="clear-history" class="btn small">履歴をクリア</button>
+          </div>
+          <div id="history-board" class="fav-board"></div>
+        </div>
+
+        <div id="panel-fav" class="panel" hidden>
+          <div id="fav-board" class="fav-board"></div>
+        </div>
+      </section>
     </div>
-  </section>
 
-  <!-- 入力部 -->
-  <section class="input-area" aria-label="入力部">
-    <div class="mode-tabs" role="tablist">
-      <button type="button" class="mode-tab active" data-mode="all" role="tab">符号表</button>
-      <button type="button" class="mode-tab" data-mode="current" role="tab">入力内容</button>
-      <button type="button" class="mode-tab" data-mode="history" role="tab">入力履歴</button>
-      <button type="button" class="mode-tab" data-mode="fav" role="tab">マイリスト</button>
-      <div class="font-toggle" role="group" aria-label="表示フォント">
-        <span class="font-label">フォント</span>
-        <button type="button" class="font-opt" data-font="system">システム</button>
-        <button type="button" class="font-opt" data-font="noto">Noto</button>
-        <button type="button" class="font-opt" data-font="extended" title="西夏文字・変体仮名など、希少スクリプト用フォントを同梱(約6MB)">拡張</button>
-      </div>
-    </div>
-
-    <div id="attr-legend" class="attr-legend"></div>
-
-    <div id="panel-all" class="panel">
-      <div id="block-header" class="block-header"></div>
-      <div id="grid" class="grid"></div>
-    </div>
-
-    <div id="panel-current" class="panel" hidden>
-      <div class="board-bar">
-        <span class="board-hint">現在、出力欄で使われている文字（出現順）</span>
-      </div>
-      <div id="current-board" class="fav-board"></div>
-    </div>
-
-    <div id="panel-history" class="panel" hidden>
-      <div class="board-bar">
-        <span class="board-hint">最近入力した文字（新しい順）</span>
-        <button type="button" id="clear-history" class="btn small">履歴をクリア</button>
-      </div>
-      <div id="history-board" class="fav-board"></div>
-    </div>
-
-    <div id="panel-fav" class="panel" hidden>
-      <div id="fav-board" class="fav-board"></div>
-    </div>
-  </section>
+    <!-- 右メニューゾーン（予備） -->
+    <aside class="menu-zone menu-right"></aside>
+  </div>
 
   <!-- 詳細モーダル -->
   <div id="modal" class="modal" hidden></div>

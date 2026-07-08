@@ -140,6 +140,20 @@ function getBlocks() {
   return blocks;
 }
 
+// Up to n representative codepoints from a block, for a small glyph preview
+// in the block picker. Skips control/blank codepoints (nothing to show) and
+// combining marks (nothing to combine with here); stops scanning as soon as
+// n are found, so this stays cheap even for huge CJK ideograph blocks.
+function sampleGlyphs(block, n = 3) {
+  const out = [];
+  for (let cp = block.s; cp <= block.e && out.length < n; cp++) {
+    if (!isInsertable(cp) || isBlankGlyph(cp) || isCombining(cp)) continue;
+    if (categoryOf(cp) === 'Cc') continue;
+    out.push(cp);
+  }
+  return out;
+}
+
 // ---- planes ---------------------------------------------------------------
 
 const PLANE_LABELS = {
@@ -544,7 +558,7 @@ window.App.Data = {
   SEGMENTS, COLS, ROW_H, segRows, totalRows,
   loadCore, ensureNames, ensureDescriptions,
   hex, inScope, categoryOf, isAssigned, isEmptyCell, isInsertable, isBlankGlyph,
-  isCombining, glyphFor, controlAbbr, blockOf, getBlocks, planeOf, planeInfo, rowToBaseCp, cpToRow,
+  isCombining, glyphFor, controlAbbr, blockOf, getBlocks, sampleGlyphs, planeOf, planeInfo, rowToBaseCp, cpToRow,
   neighborInsertable, algorithmicName, nameSync, getName, descriptionSync, getDescription, categoryDesc,
   utf8Bytes, utf16Units,
   categoryGroup, groupOf, dominantGroupForRange, blockGroup, blockLabel,

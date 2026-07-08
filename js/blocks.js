@@ -17,12 +17,12 @@ function legendHtmlFor(mode) {
   }
   if (mode === 'age') {
     return D.ERAS
-      .map((e) => `<span class="legend-item"><span class="swatch" data-group="${e.key}"></span>${e.ja} <span class="legend-en">${e.en}</span></span>`)
+      .map((e) => `<span class="legend-item"><span class="swatch" data-group="${e.key}"></span><span class="legend-label"><span class="legend-ja">${e.ja}</span><span class="legend-en">${e.en}</span></span></span>`)
       .join('');
   }
   return Object.entries(D.GROUP_LABELS)
     .map(([g, [ja, en]]) =>
-      `<span class="legend-item"><span class="swatch" data-group="${g}"></span>${ja} <span class="legend-en">${en}</span></span>`)
+      `<span class="legend-item"><span class="swatch" data-group="${g}"></span><span class="legend-label"><span class="legend-ja">${ja}</span><span class="legend-en">${en}</span></span></span>`)
     .join('');
 }
 
@@ -82,10 +82,16 @@ class BlockHeader {
         </form>
       </div>
       <div class="block-pop" hidden>
-        <div class="plane-jump"></div>
-        <input type="text" class="block-search" placeholder="ブロックを検索…" aria-label="ブロック検索">
-        <div class="block-legend"></div>
-        <ul class="block-list" role="listbox"></ul>
+        <div class="block-pop-backdrop"></div>
+        <div class="block-pop-box" role="dialog" aria-modal="true" aria-label="領域選択">
+          <div class="block-pop-header">
+            <div class="plane-jump"></div>
+            <button type="button" class="block-pop-close" aria-label="閉じる">✕</button>
+          </div>
+          <input type="text" class="block-search" placeholder="ブロックを検索…" aria-label="ブロック検索">
+          <div class="block-legend"></div>
+          <ul class="block-list" role="listbox"></ul>
+        </div>
       </div>`;
 
     this.btn = root.querySelector('.block-btn');
@@ -105,16 +111,14 @@ class BlockHeader {
     new Legend(this.legendEl, colorMode);
 
     this.btn.addEventListener('click', () => this.toggle());
+    root.querySelector('.block-pop-close').addEventListener('click', () => this.close());
+    root.querySelector('.block-pop-backdrop').addEventListener('click', () => this.close());
     this.search.addEventListener('input', () => this.filter(this.search.value));
     this.jumpForm.addEventListener('submit', (e) => { e.preventDefault(); this.jump(); });
     this.jumpInput.addEventListener('input', () => this.jumpInput.classList.remove('invalid'));
-    document.addEventListener('pointerdown', (e) => {
-      if (this.open && !this.root.contains(e.target)) this.close();
-    });
     document.addEventListener('keydown', (e) => {
       if (this.open && e.key === 'Escape') { this.close(); this.btn.focus(); }
     });
-    window.addEventListener('resize', () => { if (this.open) this.fitPop(); });
     this.colorMode.subscribe(() => this.applyColorMode());
   }
 
@@ -154,6 +158,7 @@ class BlockHeader {
       }
       const { ja, en } = D.blockLabel(b.n);
       const group = D.blockGroupForMode(mode, b) || '';
+      const samples = D.sampleGlyphs(b, 3);
       const li = document.createElement('li');
       li.role = 'option';
       li.className = 'block-item';
@@ -161,11 +166,16 @@ class BlockHeader {
       li.dataset.group = group;
       li.title = `U+${D.hex(b.s)}–U+${D.hex(b.e)}`;
       li.innerHTML =
-        `<span class="swatch" data-group="${group}"></span>` +
-        `<span class="block-item-name">` +
-        `<span class="name-ja">${escapeHtml(ja || en)}</span>` +
-        (ja ? `<span class="name-en">${escapeHtml(en)}</span>` : '') +
-        `</span>`;
+        `<div class="block-item-head">` +
+          `<span class="swatch" data-group="${group}"></span>` +
+          `<span class="block-item-name">` +
+            `<span class="name-ja">${escapeHtml(ja || en)}</span>` +
+            (ja ? `<span class="name-en">${escapeHtml(en)}</span>` : '') +
+          `</span>` +
+        `</div>` +
+        (samples.length
+          ? `<div class="block-item-samples">${samples.map((cp) => `<span class="sample-glyph">${escapeHtml(D.glyphFor(cp))}</span>`).join('')}</div>`
+          : '');
       li.addEventListener('click', () => {
         this.onJump(b.s);
         this.close();
@@ -249,18 +259,9 @@ class BlockHeader {
     this.btn.setAttribute('aria-expanded', 'true');
     this.search.value = '';
     this.filter('');
-    this.fitPop();
     this.search.focus();
     const active = this.listEl.querySelector('.active');
     if (active) active.scrollIntoView({ block: 'center' });
-  }
-
-  // Cap the popup height to the viewport space actually available below it,
-  // so opening it never pushes the page down (which reads as a layout jump).
-  fitPop() {
-    const top = this.pop.getBoundingClientRect().top;
-    const available = window.innerHeight - top - 12;
-    this.pop.style.maxHeight = `${Math.max(160, Math.min(available, window.innerHeight * 0.7))}px`;
   }
 
   close() {
