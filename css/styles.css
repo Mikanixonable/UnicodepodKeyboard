@@ -10,9 +10,9 @@
   --accent-ink: #0b1220;
   --fav: #ffcf5c;
   --danger: #f87171;
-  --row-h: 58px;
-  --gutter: 3.6rem;
-  --grid-cols: var(--gutter) repeat(16, minmax(0, 1fr));
+  --gutter: 4.8rem;
+  --cell-size: 58px;
+  --grid-cols: var(--gutter) repeat(16, var(--cell-size));
   /* glyph font: default follows the OS; toggled to Noto via [data-font] */
   --font-glyph: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     "Noto Sans", "Noto Sans CJK JP", "Noto Color Emoji", sans-serif;
@@ -261,7 +261,12 @@ button { font: inherit; cursor: pointer; }
   color: var(--muted); font-size: .72rem; scrollbar-gutter: stable;
 }
 .col-header .colh { text-align: center; padding: 4px 0; }
-.col-header .gutter { }
+.col-header .gutter {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 10px;
+}
 
 .grid-scroll { flex: 1; min-height: 0; overflow-y: auto; position: relative; scrollbar-gutter: stable; }
 .grid-sizer { position: absolute; top: 0; left: 0; width: 1px; }
@@ -269,12 +274,12 @@ button { font: inherit; cursor: pointer; }
 
 .grid-row {
   display: grid; grid-template-columns: var(--grid-cols);
-  height: var(--row-h);
+  height: var(--cell-size);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
 .gutter {
   display: flex; align-items: center; justify-content: flex-end;
-  padding-right: 8px; color: var(--muted); font-size: .7rem;
+  padding-right: 10px; color: var(--muted); font-size: .68rem;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .gutter .x { opacity: .5; }
@@ -285,8 +290,8 @@ button { font: inherit; cursor: pointer; }
   background: transparent; color: var(--text); padding: 2px 0; overflow: hidden;
   position: relative;
 }
-.cell .glyph { font-size: clamp(1.05rem, 4.4vw, 1.5rem); line-height: 1.05; font-family: var(--font-glyph); }
-.cell .cp { font-size: .58rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cell .glyph { font-size: clamp(1rem, calc(var(--cell-size) * 0.42), 1.65rem); line-height: 1.05; font-family: var(--font-glyph); }
+.cell .cp { font-size: clamp(.52rem, calc(var(--cell-size) * 0.11), .72rem); color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* attribute-group color coding: a subtle tint plus a full-color bottom edge,
    so the color reads as a cue without hurting glyph legibility */
@@ -309,13 +314,14 @@ button { font: inherit; cursor: pointer; }
 
 .cell:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .cell:active { background: color-mix(in srgb, var(--accent) 28%, transparent); }
-.cell.fav { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--fav) 65%, transparent); }
+.cell.fav { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--list-badge-color, var(--fav)) 65%, transparent); }
 .cell.fav[data-group] {
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--fav) 65%, transparent),
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--list-badge-color, var(--fav)) 65%, transparent),
               inset 0 -2px 0 0 color-mix(in srgb, var(--grp-color, transparent) 55%, transparent);
 }
 .cell.fav::after {
-  content: "★"; position: absolute; top: 2px; right: 3px; font-size: .5rem; color: var(--fav);
+  content: attr(data-badge); position: absolute; top: 2px; right: 3px; font-size: .5rem;
+  color: var(--list-badge-color, var(--fav));
 }
 .cell.blank .glyph::before {
   content: "␣"; color: var(--muted); opacity: .5;
@@ -336,7 +342,29 @@ button { font: inherit; cursor: pointer; }
   60% { box-shadow: inset 0 0 0 2px var(--accent); background: color-mix(in srgb, var(--accent) 22%, transparent); }
 }
 
-/* ---------- favorites / history keyboards ---------- */
+/* ---------- mylist / history keyboards ---------- */
+.mylist-toolbar {
+  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px clamp(10px, 3vw, 20px); border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+.mylist-picker {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
+}
+.mylist-label { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.mylist-select {
+  flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--panel-2); color: var(--text);
+}
+.mylist-select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.mylist-actions { display: flex; gap: 8px; flex: none; }
+.mylist-status {
+  padding: 6px clamp(10px, 3vw, 20px); border-bottom: 1px solid var(--border);
+  background: var(--panel); color: var(--muted); font-size: .8rem;
+}
+.btn.danger { color: var(--danger); }
+.btn.danger:hover { border-color: var(--danger); }
+.btn.danger:disabled { opacity: .45; cursor: default; }
 .board-bar {
   flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 8px clamp(10px, 3vw, 20px); border-bottom: 1px solid var(--border);
@@ -407,7 +435,7 @@ button { font: inherit; cursor: pointer; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 @media (max-width: 560px) {
-  :root { --gutter: 2.9rem; --row-h: 54px; }
+  :root { --gutter: 3.6rem; }
   .cell .cp { display: none; }
   .info-row { grid-template-columns: 5.5rem 1fr; }
 }

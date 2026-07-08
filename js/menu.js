@@ -1,4 +1,4 @@
-// Singleton context menu shared by the grid and the favorites keyboard.
+// Singleton context menu shared by the grid and the mylist keyboard.
 
 (function () {
 

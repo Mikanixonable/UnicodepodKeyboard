@@ -1,7 +1,7 @@
 (function () {
 
 const D = window.App.Data;
-const { Favorites } = window.App.Favorites;
+const { MyLists } = window.App.MyLists;
 const { History } = window.App.History;
 const { OutputArea } = window.App.Output;
 const { Grid } = window.App.Grid;
@@ -28,12 +28,13 @@ async function main() {
   // Created before OutputArea: its onChange fires synchronously during
   // construction (initial updateCount() call), so anything it touches
   // must already exist.
-  const favorites = new Favorites();
+  const mylists = new MyLists();
   const history = new History();
   const currentBoard = $('#current-board');
+  let revealInAll = null;
 
   function drawCurrent(text) {
-    renderCharBoard(currentBoard, distinctCodepoints(text), favorites,
+    renderCharBoard(currentBoard, distinctCodepoints(text), mylists,
       '出力欄に文字を入力すると、ここに使われている文字が表示されます。');
   }
 
@@ -56,50 +57,105 @@ async function main() {
   $('#redo-btn').addEventListener('click', () => output.redo());
 
   // ---- modal, block header, grid ----------------------------------------
-  const modal = new DetailModal($('#modal'), { onInsert: insert, favorites });
+  const modal = new DetailModal($('#modal'), {
+    onInsert: insert,
+    onReveal: (cp) => revealInAll && revealInAll(cp),
+    mylists,
+  });
   const header = new BlockHeader($('#block-header'), {
     onJump: (cp, flash) => grid.scrollToCp(cp, flash),
   });
   const grid = new Grid($('#grid'), {
     onInsert: insert,
     onDetail: (cp) => modal.open(cp),
-    favorites,
+    onReveal: (cp, flash) => revealInAll && revealInAll(cp, flash),
+    mylists,
     onTopCpChange: (cp) => header.setTopCp(cp),
   });
 
-  // ---- favorites & history keyboards ------------------------------------
+  // ---- mylist & history keyboards ---------------------------------------
+  const favPanel = $('#panel-fav');
+  favPanel.innerHTML = `
+    <div class="mylist-toolbar">
+      <label class="mylist-picker">
+        <span class="mylist-label">マイリスト</span>
+        <select id="mylist-select" class="mylist-select"></select>
+      </label>
+      <div class="mylist-actions">
+        <button type="button" id="mylist-add" class="btn small">＋ 作成</button>
+        <button type="button" id="mylist-delete" class="btn small danger">削除</button>
+      </div>
+    </div>
+    <div class="mylist-status">
+      <span id="mylist-status"></span>
+    </div>
+    <div id="fav-board" class="fav-board"></div>`;
+
   const favBoard = $('#fav-board');
+  const mylistSelect = $('#mylist-select');
+  const mylistAddBtn = $('#mylist-add');
+  const mylistDeleteBtn = $('#mylist-delete');
+  const mylistStatus = $('#mylist-status');
   const histBoard = $('#history-board');
 
-  const drawFav = () => renderCharBoard(favBoard, favorites.list, favorites,
-    'お気に入りはまだありません。<br>文字を右クリック（または長押し）して「お気に入り登録」してください。');
-  const drawHist = () => renderCharBoard(histBoard, history.list, favorites,
+  function renderMyListControls() {
+    mylistSelect.innerHTML = mylists.lists.map((list) => {
+      const count = list.items.length;
+      const label = `${list.icon} ${list.name}${list.builtIn ? '（既定）' : ''} ・ ${count}`;
+      return `<option value="${list.id}">${escapeHtml(label)}</option>`;
+    }).join('');
+    mylistSelect.value = mylists.activeId;
+    const active = mylists.activeList;
+    mylistStatus.textContent = `${active.icon} ${active.name} ・ ${active.items.length} 件`;
+    mylistDeleteBtn.disabled = !mylists.canDeleteActive();
+    mylistDeleteBtn.title = mylists.canDeleteActive() ? `${active.name} を削除` : 'お気に入りは削除できません';
+  }
+
+  const drawFav = () => renderCharBoard(favBoard, mylists.activeList.items, mylists,
+    `${mylists.activeLabel} はまだありません。<br>文字を右クリック（または長押し）して「${mylists.activeLabel}に追加」してください。`);
+  const drawHist = () => renderCharBoard(histBoard, history.list, mylists,
     '入力履歴はまだありません。<br>文字を入力すると、ここに新しい順で表示されます。');
 
-  // favorites changes affect the star badge on all three boards
-  favorites.subscribe(() => { drawFav(); drawHist(); drawCurrent(output.ta.value); });
+  // mylist changes affect the badge on all three boards
+  mylists.subscribe(() => { renderMyListControls(); drawFav(); drawHist(); drawCurrent(output.ta.value); });
   history.subscribe(drawHist);
+  mylistSelect.addEventListener('change', () => { mylists.setActive(mylistSelect.value); });
+  mylistAddBtn.addEventListener('click', () => {
+    const suggested = mylists.lists.some((list) => list.name === 'マイリスト 2')
+      ? `マイリスト ${mylists.lists.length}`
+      : 'マイリスト 2';
+    const name = window.prompt('新しいマイリスト名を入力してください', suggested);
+    if (!name) return;
+    mylists.createList(name);
+  });
+  mylistDeleteBtn.addEventListener('click', () => {
+    const active = mylists.activeList;
+    if (!active || !mylists.canDeleteActive()) return;
+    if (!window.confirm(`「${active.name}」を削除しますか？`)) return;
+    mylists.removeList(active.id);
+  });
   drawFav();
   drawHist();
+  renderMyListControls();
 
   bindCharBoard(currentBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
     {
-      label: favorites.has(cp) ? '★ お気に入り解除' : '☆ お気に入り登録',
-      onClick: () => favorites.toggle(cp),
+      label: mylists.has(cp) ? `${mylists.activeList.icon} ${mylists.activeList.name}から外す` : `${mylists.activeList.icon} ${mylists.activeList.name}に追加`,
+      onClick: () => mylists.toggle(cp),
     },
   ]);
   bindCharBoard(favBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
-    { label: '← 前へ移動', onClick: () => favorites.move(cp, -1) },
-    { label: '次へ移動 →', onClick: () => favorites.move(cp, 1) },
-    { label: '★ お気に入り解除', onClick: () => favorites.remove(cp) },
+    { label: '← 前へ移動', onClick: () => mylists.move(cp, -1) },
+    { label: '次へ移動 →', onClick: () => mylists.move(cp, 1) },
+    { label: `${mylists.activeList.icon} ${mylists.activeList.name}から外す`, onClick: () => mylists.remove(cp) },
   ]);
   bindCharBoard(histBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
     {
-      label: favorites.has(cp) ? '★ お気に入り解除' : '☆ お気に入り登録',
-      onClick: () => favorites.toggle(cp),
+      label: mylists.has(cp) ? `${mylists.activeList.icon} ${mylists.activeList.name}から外す` : `${mylists.activeList.icon} ${mylists.activeList.name}に追加`,
+      onClick: () => mylists.toggle(cp),
     },
     { label: '履歴から削除', onClick: () => history.remove(cp) },
   ]);
@@ -117,18 +173,24 @@ async function main() {
     all: $('#panel-all'), current: $('#panel-current'),
     history: $('#panel-history'), fav: $('#panel-fav'),
   };
-  tabs.forEach((t) => t.addEventListener('click', () => {
-    tabs.forEach((x) => x.classList.toggle('active', x === t));
-    const mode = t.dataset.mode;
+  const setMode = (mode) => {
+    tabs.forEach((x) => x.classList.toggle('active', x.dataset.mode === mode));
     for (const key in panels) panels[key].hidden = mode !== key;
-  }));
+    if (mode === 'all') grid.refreshLayout(true);
+  };
+  tabs.forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
+  revealInAll = (cp, flash = true) => {
+    setMode('all');
+    modal.close();
+    grid.scrollToCp(cp, flash);
+  };
 
   // start names prefetch in the background (non-blocking) for snappy modals
   D.ensureNames();
   $('#loading').remove();
 
   // debug handle (harmless in production; used by tests)
-  window.__app = { output, favorites, history, grid, header, modal, insert, drawCurrent };
+  window.__app = { output, mylists, history, grid, header, modal, insert, drawCurrent };
 }
 
 // Unique codepoints in a string, in order of first appearance.
@@ -156,8 +218,18 @@ function setupFontToggle() {
   apply(cur());
 }
 
-// Render a list of codepoints as a clickable keyboard (favorites / history).
-function renderCharBoard(el, list, favorites, emptyHtml) {
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[c]));
+}
+
+// Render a list of codepoints as a clickable keyboard (mylist / history).
+function renderCharBoard(el, list, mylists, emptyHtml) {
   if (!list.length) {
     el.innerHTML = `<p class="fav-empty">${emptyHtml}</p>`;
     return;
@@ -167,8 +239,10 @@ function renderCharBoard(el, list, favorites, emptyHtml) {
   for (const cp of list) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'cell' + (favorites.has(cp) ? ' fav' : '');
+    b.className = 'cell' + (mylists.has(cp) ? ' fav' : '');
     b.dataset.cp = cp;
+    b.dataset.badge = mylists.activeList.icon;
+    b.style.setProperty('--list-badge-color', mylists.activeList.icon === '★' ? 'var(--fav)' : 'var(--accent)');
     b.innerHTML = `<span class="glyph">${D.glyphFor(cp)}</span><span class="cp">${D.hex(cp)}</span>`;
     wrap.appendChild(b);
   }

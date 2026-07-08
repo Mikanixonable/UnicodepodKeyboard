@@ -8,16 +8,18 @@ const { openMenu } = window.App.Menu;
 const BUFFER = 6; // extra rows above/below viewport
 
 class Grid {
-  constructor(root, { onInsert, onDetail, favorites, onTopCpChange }) {
+  constructor(root, { onInsert, onDetail, onReveal, mylists, onTopCpChange }) {
     this.root = root;
     this.onInsert = onInsert;
     this.onDetail = onDetail;
-    this.fav = favorites;
+    this.onReveal = onReveal;
+    this.fav = mylists;
     this.onTopCpChange = onTopCpChange;
+    this.rowH = D.ROW_H;
 
     root.innerHTML = `
       <div class="col-header" role="row">
-        <div class="gutter"></div>
+        <div class="gutter">U+0x</div>
         ${Array.from({ length: D.COLS }, (_, i) =>
           `<div class="colh">${i.toString(16).toUpperCase()}</div>`).join('')}
       </div>
@@ -28,14 +30,16 @@ class Grid {
 
     this.scroll = root.querySelector('.grid-scroll');
     this.rowsEl = root.querySelector('.grid-rows');
+    this.sizerEl = root.querySelector('.grid-sizer');
+    this.headerGutterEl = root.querySelector('.col-header .gutter');
     this.lastStart = -1;
     this.lastTopCp = -1;
 
     this.scroll.addEventListener('scroll', () => this.onScroll());
     this.bindPointer();
     this.fav.subscribe(() => this.rerender());
-    window.addEventListener('resize', () => this.render(true));
-    this.render(true);
+    window.addEventListener('resize', () => this.refreshLayout(true));
+    this.refreshLayout(true);
   }
 
   onScroll() {
@@ -44,15 +48,30 @@ class Grid {
   }
 
   visibleRowCount() {
-    return Math.ceil(this.scroll.clientHeight / D.ROW_H);
+    return Math.ceil(this.scroll.clientHeight / this.rowH);
+  }
+
+  refreshLayout(forceRender = false) {
+    const currentWidth = this.scroll.clientWidth;
+    if (currentWidth <= 0) return;
+    const gutterWidth = this.headerGutterEl.getBoundingClientRect().width;
+    const usable = currentWidth - gutterWidth;
+    const nextRowH = Math.max(1, Math.floor(usable / D.COLS));
+    const prevRowH = this.rowH;
+    if (nextRowH !== prevRowH) {
+      this.rowH = nextRowH;
+      this.root.style.setProperty('--cell-size', `${nextRowH}px`);
+      this.sizerEl.style.height = `${D.totalRows * nextRowH}px`;
+    }
+    this.render(forceRender || nextRowH !== prevRowH);
   }
 
   render(force) {
-    const start = Math.max(0, Math.floor(this.scroll.scrollTop / D.ROW_H) - BUFFER);
+    const start = Math.max(0, Math.floor(this.scroll.scrollTop / this.rowH) - BUFFER);
     const end = Math.min(D.totalRows, start + this.visibleRowCount() + BUFFER * 2);
 
     // notify block header of the top-most fully-scoped codepoint
-    const topRow = Math.floor(this.scroll.scrollTop / D.ROW_H);
+    const topRow = Math.floor(this.scroll.scrollTop / this.rowH);
     const topCp = D.rowToBaseCp(Math.min(topRow, D.totalRows - 1));
     if (topCp !== this.lastTopCp) {
       this.lastTopCp = topCp;
@@ -65,7 +84,7 @@ class Grid {
     const frag = document.createDocumentFragment();
     for (let row = start; row < end; row++) frag.appendChild(this.buildRow(row));
     this.rowsEl.replaceChildren(frag);
-    this.rowsEl.style.transform = `translateY(${start * D.ROW_H}px)`;
+    this.rowsEl.style.transform = `translateY(${start * this.rowH}px)`;
   }
 
   rerender() { this.render(true); }
@@ -115,9 +134,10 @@ class Grid {
   }
 
   menuItems(cp) {
+    const label = this.fav.activeLabel || 'マイリスト';
     return [
       {
-        label: this.fav.has(cp) ? '★ お気に入り解除' : '☆ お気に入り登録',
+        label: this.fav.has(cp) ? `${label}から外す` : `${label}に追加`,
         onClick: () => this.fav.toggle(cp),
       },
       { label: '詳細を表示', onClick: () => this.onDetail(cp) },
@@ -169,7 +189,7 @@ class Grid {
     const row = D.cpToRow(cp);
     if (row == null) return;
     // put the target row at the top so the block header reflects it
-    this.scroll.scrollTop = row * D.ROW_H;
+    this.scroll.scrollTop = row * this.rowH;
     this.render(true);
     if (flash) this.flashCp(cp);
   }

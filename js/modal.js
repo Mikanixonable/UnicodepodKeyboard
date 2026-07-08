@@ -1,14 +1,15 @@
-// Character detail modal with prev/next navigation, insert, and favorite toggle.
+// Character detail modal with prev/next navigation, insert, and mylist toggle.
 
 (function () {
 
 const D = window.App.Data;
 
 class DetailModal {
-  constructor(root, { onInsert, favorites }) {
+  constructor(root, { onInsert, onReveal, mylists }) {
     this.root = root;
     this.onInsert = onInsert;
-    this.fav = favorites;
+    this.onReveal = onReveal;
+    this.fav = mylists;
     this.cp = null;
 
     root.innerHTML = `
@@ -24,6 +25,7 @@ class DetailModal {
         <dl class="modal-info"></dl>
         <div class="modal-actions">
           <button type="button" class="btn insert-btn">＋ 入力</button>
+          <button type="button" class="btn reveal-btn">全Unicodeで表示</button>
           <button type="button" class="btn fav-btn"></button>
         </div>
       </div>`;
@@ -31,6 +33,7 @@ class DetailModal {
     this.glyphEl = root.querySelector('.modal-glyph');
     this.nameEl = root.querySelector('.modal-name');
     this.infoEl = root.querySelector('.modal-info');
+    this.revealBtn = root.querySelector('.reveal-btn');
     this.favBtn = root.querySelector('.fav-btn');
 
     root.querySelector('.modal-close').addEventListener('click', () => this.close());
@@ -38,6 +41,7 @@ class DetailModal {
     root.querySelector('.nav-prev').addEventListener('click', () => this.step(-1));
     root.querySelector('.nav-next').addEventListener('click', () => this.step(1));
     root.querySelector('.insert-btn').addEventListener('click', () => this.onInsert(this.cp));
+    this.revealBtn.addEventListener('click', () => { if (this.cp != null && this.onReveal) this.onReveal(this.cp); });
     this.favBtn.addEventListener('click', () => { this.fav.toggle(this.cp); this.updateFav(); });
 
     document.addEventListener('keydown', (e) => {
@@ -67,7 +71,8 @@ class DetailModal {
 
   updateFav() {
     const on = this.fav.has(this.cp);
-    this.favBtn.textContent = on ? '★ お気に入り解除' : '☆ お気に入り登録';
+    const label = this.fav.activeLabel || 'マイリスト';
+    this.favBtn.textContent = on ? `${label}から外す` : `${label}に追加`;
     this.favBtn.classList.toggle('on', on);
   }
 
