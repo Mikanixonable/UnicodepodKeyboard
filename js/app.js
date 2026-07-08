@@ -244,21 +244,6 @@ async function main() {
   };
   tabs.forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
-  // Horizontal scroll (trackpad swipe / shift+wheel) switches tabs, wrapping
-  // from the last tab back to the first and vice versa.
-  const tabOrder = [...tabs].map((t) => t.dataset.mode);
-  let wheelCooldown = false;
-  $('.mode-tabs').addEventListener('wheel', (e) => {
-    if (Math.abs(e.deltaX) < Math.abs(e.deltaY) || Math.abs(e.deltaX) < 10) return;
-    e.preventDefault();
-    if (wheelCooldown) return;
-    const idx = tabOrder.indexOf(currentMode);
-    const next = tabOrder[(idx + (e.deltaX > 0 ? 1 : -1) + tabOrder.length) % tabOrder.length];
-    setMode(next);
-    wheelCooldown = true;
-    setTimeout(() => { wheelCooldown = false; }, 350);
-  }, { passive: false });
-
   window.addEventListener('hashchange', () => {
     const mode = UrlState.get('mode');
     if (mode && mode !== currentMode && panels[mode]) setMode(mode, false);
