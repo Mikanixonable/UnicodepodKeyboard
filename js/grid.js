@@ -70,11 +70,18 @@ class Grid {
   }
 
   render(force) {
-    const start = Math.max(0, Math.floor(this.scroll.scrollTop / this.rowH) - BUFFER);
+    // +1px tolerance (in scrollTop space, before dividing by rowH): scrollToCp()
+    // sets scrollTop = row * rowH, but the browser snaps that to a whole
+    // device pixel, which can land a hair under the exact boundary --
+    // otherwise floors down to row-1 here. A row-space epsilon would need to
+    // scale with rowH (and with row count, since float error grows with the
+    // magnitude of row * rowH), so add the tolerance in pixel space instead.
+    const scrolledRow = (this.scroll.scrollTop + 1) / this.rowH;
+    const start = Math.max(0, Math.floor(scrolledRow) - BUFFER);
     const end = Math.min(D.totalRows, start + this.visibleRowCount() + BUFFER * 2);
 
     // notify block header of the top-most fully-scoped codepoint
-    const topRow = Math.floor(this.scroll.scrollTop / this.rowH);
+    const topRow = Math.floor(scrolledRow);
     const topCp = D.rowToBaseCp(Math.min(topRow, D.totalRows - 1));
     if (topCp !== this.lastTopCp) {
       this.lastTopCp = topCp;
