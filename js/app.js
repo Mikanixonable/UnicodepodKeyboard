@@ -64,6 +64,7 @@ async function main() {
     onInsert: insert,
     onReveal: (cp) => revealInAll && revealInAll(cp),
     onAddMenu: (cp, rect) => openMyListMenu(cp, rect.left + rect.width / 2, rect.bottom + 8),
+    onCopyDone: () => showToast('コピーしました'),
     mylists,
   });
   const header = new BlockHeader($('#block-header'), {
