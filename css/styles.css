@@ -6,7 +6,7 @@
   --border: #2a2f3a;
   --text: #e6e8ee;
   --muted: #8b92a3;
-  --accent: #6ea8fe;
+  --accent: #4cb8d2;
   --accent-ink: #0b1220;
   --fav: #ffcf5c;
   --danger: #f87171;
@@ -146,7 +146,7 @@ button { font: inherit; cursor: pointer; }
 }
 .menu-zone { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .menu-left { align-items: center; }
-.menu-right { align-items: flex-end; }
+.menu-right { align-items: stretch; border-left: 1px solid var(--border); }
 .content-zone {
   display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
   border-left: 1px solid var(--border); border-right: 1px solid var(--border);
@@ -159,10 +159,10 @@ button { font: inherit; cursor: pointer; }
 }
 .site-icon {
   flex: none; display: inline-flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 12px; background: var(--accent);
-  color: #fff; font-weight: 700; font-size: 1.3rem;
+  width: 80px; height: 80px; border-radius: 12px; background: var(--accent);
+  color: #fff; font-weight: 700; font-size: 4rem;
 }
-.site-title { margin: 0; font-size: .82rem; font-weight: 700; color: var(--text); text-align: center; }
+.site-title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); text-align: center; }
 
 /* ---------- output ---------- */
 .output-area {
@@ -258,15 +258,20 @@ button { font: inherit; cursor: pointer; }
 .block-btn .name-en { font-size: .68rem; font-weight: 400; color: var(--muted); }
 .block-btn .caret { color: var(--muted); }
 
+/* middle of the right menu zone */
+.jump-form-slot {
+  flex: none; padding: 10px clamp(10px, 3vw, 20px); background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
 .jump {
-  display: inline-flex; align-items: center; flex: 0 0 auto;
+  display: flex; align-items: center;
   border: 1px solid var(--border); border-radius: 9px; background: var(--panel-2);
   padding: 0 4px 0 8px; overflow: hidden;
 }
 .jump:focus-within { outline: 2px solid var(--accent); outline-offset: -1px; }
 .jump-prefix { color: var(--muted); font-size: .82rem; font-variant-numeric: tabular-nums; }
 .jump-input {
-  width: clamp(6.5rem, 22vw, 10rem); border: none; background: transparent; color: var(--text);
+  width: clamp(6.5rem, 22vw, 10rem); flex: 1; min-width: 0; border: none; background: transparent; color: var(--text);
   padding: 6px 4px; font-size: .9rem; font-variant-numeric: tabular-nums; text-transform: uppercase;
 }
 .jump-input:focus { outline: none; }
@@ -318,12 +323,31 @@ button { font: inherit; cursor: pointer; }
   border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2);
 }
 
-/* same legend, always visible above the grid/current/history/mylist boards */
+/* same legend, always visible in the middle of the left menu zone */
 .attr-legend {
   flex: none; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px 14px;
   padding: 6px clamp(10px, 3vw, 20px); background: var(--panel);
   border-bottom: 1px solid var(--border);
 }
+/* the left menu zone is a narrow column, not a wide bar -- stack the
+   legend above the toggle instead of side-by-side, and drop the divider
+   that made sense between side-by-side columns */
+.menu-left .attr-legend { grid-template-columns: 1fr; gap: 8px; border-bottom: none; }
+.menu-left .colormode-toggle {
+  border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 8px;
+}
+
+/* persistent scrollable block list in the right menu zone; clicking a block
+   jumps the main grid to it (see BlockSidebar in js/blocks.js). .block-list's
+   own flex:1 + overflow-y:auto (base rule) does the actual scrolling, same
+   as inside .block-pop-box -- this just needs to be its flex column parent. */
+.block-sidebar { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.block-sidebar .block-list { grid-template-columns: 1fr; padding: 8px; gap: 2px; }
+/* compact single-row layout (name + samples side by side) to save vertical
+   space, since this list is always visible and can get long */
+.block-sidebar .block-item { flex-direction: row; align-items: center; gap: 8px; padding: 5px 8px; }
+.block-sidebar .block-item-head { flex: 1 1 auto; min-width: 0; }
+.block-sidebar .block-item-samples { flex: none; padding-left: 0; margin-left: auto; }
 /* color-mode toggle embedded in the legend (right column), so it appears
    everywhere the legend does (the shared bar above the tabs, and the block
    picker popup) */

@@ -5,7 +5,7 @@ const { MyLists } = window.App.MyLists;
 const { History } = window.App.History;
 const { OutputArea } = window.App.Output;
 const { Grid } = window.App.Grid;
-const { BlockHeader, Legend } = window.App.Blocks;
+const { BlockHeader, Legend, BlockSidebar } = window.App.Blocks;
 const { DetailModal } = window.App.Modal;
 const { openMenu } = window.App.Menu;
 const { ColorMode } = window.App.ColorMode;
@@ -61,6 +61,32 @@ async function main() {
   $('#undo-btn').addEventListener('click', () => output.undo());
   $('#redo-btn').addEventListener('click', () => output.redo());
 
+  // Bulk add/remove: every distinct codepoint currently in the output area,
+  // to/from whichever mylist the user picks from the popup menu.
+  function openOutputMyListMenu(x, y, mode) {
+    const cps = distinctCodepoints(output.ta.value);
+    const items = mylists.lists.map((list) => ({
+      label: `${list.icon} ${list.name}${mode === 'add' ? 'へ追加' : 'から削除'}`,
+      onClick: () => {
+        if (!cps.length) return;
+        for (const cp of cps) {
+          if (mode === 'add') mylists.addTo(list.id, cp);
+          else mylists.removeFrom(list.id, cp);
+        }
+        showToast(mode === 'add' ? `${cps.length} 文字を追加しました` : `${cps.length} 文字を削除しました`);
+      },
+    }));
+    openMenu(x, y, items);
+  }
+  $('#output-add-mylist-btn').addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    openOutputMyListMenu(r.left, r.bottom + 6, 'add');
+  });
+  $('#output-remove-mylist-btn').addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    openOutputMyListMenu(r.left, r.bottom + 6, 'remove');
+  });
+
   // ---- modal, block header, grid ----------------------------------------
   // Shared legend + color-mode toggle (embeds "なし/種類/追加時期" buttons),
   // shown above all four tabs; the block picker popup has its own instance.
@@ -75,6 +101,14 @@ async function main() {
   });
   const header = new BlockHeader($('#block-header'), {
     onJump: (cp, flash) => grid.scrollToCp(cp, flash),
+    colorMode,
+    jumpRoot: $('#jump-form-slot'),
+  });
+  // right-menu-zone block list: same jump behavior as the modal, but also
+  // switches to the 符号表 tab first (revealInAll), since it's reachable
+  // from any tab.
+  new BlockSidebar($('#block-sidebar'), {
+    onJump: (cp) => revealInAll && revealInAll(cp),
     colorMode,
   });
   const grid = new Grid($('#grid'), {
@@ -209,6 +243,22 @@ async function main() {
     if (updateUrl) UrlState.set('mode', mode);
   };
   tabs.forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
+
+  // Horizontal scroll (trackpad swipe / shift+wheel) switches tabs, wrapping
+  // from the last tab back to the first and vice versa.
+  const tabOrder = [...tabs].map((t) => t.dataset.mode);
+  let wheelCooldown = false;
+  $('.mode-tabs').addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaX) < Math.abs(e.deltaY) || Math.abs(e.deltaX) < 10) return;
+    e.preventDefault();
+    if (wheelCooldown) return;
+    const idx = tabOrder.indexOf(currentMode);
+    const next = tabOrder[(idx + (e.deltaX > 0 ? 1 : -1) + tabOrder.length) % tabOrder.length];
+    setMode(next);
+    wheelCooldown = true;
+    setTimeout(() => { wheelCooldown = false; }, 350);
+  }, { passive: false });
+
   window.addEventListener('hashchange', () => {
     const mode = UrlState.get('mode');
     if (mode && mode !== currentMode && panels[mode]) setMode(mode, false);

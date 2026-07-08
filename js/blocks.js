@@ -41,13 +41,13 @@ class Legend {
   render() {
     const mode = this.colorMode.get();
     this.root.innerHTML =
-      `<div class="legend-items">${legendHtmlFor(mode)}</div>
-      <div class="colormode-toggle" role="group" aria-label="色分け方式">
+      `<div class="colormode-toggle" role="group" aria-label="色分け方式">
         <span class="colormode-label">色分け</span>
         <button type="button" class="colormode-opt" data-colormode="none">なし</button>
         <button type="button" class="colormode-opt" data-colormode="category">種類</button>
         <button type="button" class="colormode-opt" data-colormode="age">追加時期</button>
-      </div>`;
+      </div>
+      <div class="legend-items">${legendHtmlFor(mode)}</div>`;
     for (const btn of this.root.querySelectorAll('.colormode-opt')) {
       btn.classList.toggle('active', btn.dataset.colormode === mode);
       btn.addEventListener('click', () => this.colorMode.set(btn.dataset.colormode));
@@ -55,8 +55,87 @@ class Legend {
   }
 }
 
-class BlockHeader {
+// Builds the plane-header + block-item <li>s shared by the block-picker
+// modal list and the persistent sidebar list. onItemClick(block) is called
+// on click; the two callers differ only in what else that does (close the
+// modal, or not).
+function buildBlockList(listEl, mode, onItemClick) {
+  const frag = document.createDocumentFragment();
+  let lastPlane = null;
+  const planeHeaders = [];
+  for (const b of D.getBlocks()) {
+    const plane = b.s >>> 16;
+    if (plane !== lastPlane) {
+      lastPlane = plane;
+      const header = document.createElement('li');
+      header.className = 'plane-header';
+      header.role = 'presentation';
+      header.textContent = planeLabel(plane);
+      frag.appendChild(header);
+      planeHeaders.push({ plane, el: header });
+    }
+    const { ja, en } = D.blockLabel(b.n);
+    const group = D.blockGroupForMode(mode, b) || '';
+    const samples = D.sampleGlyphs(b, 3);
+    const li = document.createElement('li');
+    li.role = 'option';
+    li.className = 'block-item';
+    li.dataset.cp = b.s;
+    li.dataset.group = group;
+    li.title = `U+${D.hex(b.s)}–U+${D.hex(b.e)}`;
+    li.innerHTML =
+      `<div class="block-item-head">` +
+        `<span class="swatch" data-group="${group}"></span>` +
+        `<span class="block-item-name">` +
+          `<span class="name-ja">${escapeHtml(ja || en)}</span>` +
+          (ja ? `<span class="name-en">${escapeHtml(en)}</span>` : '') +
+        `</span>` +
+      `</div>` +
+      (samples.length
+        ? `<div class="block-item-samples">${samples.map((cp) => `<span class="sample-glyph">${escapeHtml(D.glyphFor(cp))}</span>`).join('')}</div>`
+        : '');
+    li.addEventListener('click', () => onItemClick(b));
+    frag.appendChild(li);
+  }
+  listEl.appendChild(frag);
+  return { items: [...listEl.querySelectorAll('.block-item')], planeHeaders };
+}
+
+// Persistent scrollable block list shown in the right menu zone: same
+// look as the modal's list (colors, samples), clicking jumps the main grid
+// without opening/closing anything.
+class BlockSidebar {
   constructor(root, { onJump, colorMode }) {
+    this.root = root;
+    this.onJump = onJump;
+    this.colorMode = colorMode;
+    root.innerHTML = '<ul class="block-list block-sidebar-list" role="listbox"></ul>';
+    this.listEl = root.querySelector('.block-list');
+    this.buildList();
+    this.colorMode.subscribe(() => this.applyColorMode());
+  }
+
+  mode() { return this.colorMode.get(); }
+
+  buildList() {
+    const { items } = buildBlockList(this.listEl, this.mode(), (b) => this.onJump(b.s));
+    this.items = items;
+  }
+
+  applyColorMode() {
+    const mode = this.mode();
+    for (const li of this.items) {
+      const b = D.blockOf(Number(li.dataset.cp));
+      const g = b ? (D.blockGroupForMode(mode, b) || '') : '';
+      li.dataset.group = g;
+      const sw = li.querySelector('.swatch');
+      if (sw) sw.dataset.group = g;
+    }
+  }
+}
+
+class BlockHeader {
+  constructor(root, { onJump, colorMode, jumpRoot }) {
     this.root = root;
     this.onJump = onJump;
     this.colorMode = colorMode;
@@ -74,12 +153,6 @@ class BlockHeader {
           </span>
           <span class="caret">▾</span>
         </button>
-        <form class="jump" autocomplete="off">
-          <span class="jump-prefix">U+</span>
-          <input type="text" class="jump-input" placeholder="コードポイントで移動"
-                 inputmode="text" aria-label="コードポイントで移動（16進）" maxlength="6">
-          <button type="submit" class="jump-go" aria-label="移動">→</button>
-        </form>
       </div>
       <div class="block-pop" hidden>
         <div class="block-pop-backdrop"></div>
@@ -94,6 +167,19 @@ class BlockHeader {
         </div>
       </div>`;
 
+    // rendered into a separate container (e.g. the right menu zone) if given,
+    // otherwise appended alongside the block-btn
+    const jumpHtml = `
+      <form class="jump" autocomplete="off">
+        <span class="jump-prefix">U+</span>
+        <input type="text" class="jump-input" placeholder="コードポイントで移動"
+               inputmode="text" aria-label="コードポイントで移動（16進）" maxlength="6">
+        <button type="submit" class="jump-go" aria-label="移動">→</button>
+      </form>`;
+    const jScope = jumpRoot || root;
+    if (jumpRoot) jScope.innerHTML = jumpHtml;
+    else jScope.insertAdjacentHTML('beforeend', jumpHtml);
+
     this.btn = root.querySelector('.block-btn');
     this.swatchEl = root.querySelector('.block-btn > .swatch');
     this.nameJaEl = root.querySelector('.block-btn .name-ja');
@@ -103,8 +189,8 @@ class BlockHeader {
     this.legendEl = root.querySelector('.block-legend');
     this.search = root.querySelector('.block-search');
     this.listEl = root.querySelector('.block-list');
-    this.jumpForm = root.querySelector('.jump');
-    this.jumpInput = root.querySelector('.jump-input');
+    this.jumpForm = jScope.querySelector('.jump');
+    this.jumpInput = jScope.querySelector('.jump-input');
 
     this.buildList();
     this.buildPlaneJump();
@@ -141,49 +227,12 @@ class BlockHeader {
   }
 
   buildList() {
-    const frag = document.createDocumentFragment();
-    let lastPlane = null;
-    this.planeHeaders = [];
-    const mode = this.mode();
-    for (const b of D.getBlocks()) {
-      const plane = b.s >>> 16;
-      if (plane !== lastPlane) {
-        lastPlane = plane;
-        const header = document.createElement('li');
-        header.className = 'plane-header';
-        header.role = 'presentation';
-        header.textContent = planeLabel(plane);
-        frag.appendChild(header);
-        this.planeHeaders.push({ plane, el: header });
-      }
-      const { ja, en } = D.blockLabel(b.n);
-      const group = D.blockGroupForMode(mode, b) || '';
-      const samples = D.sampleGlyphs(b, 3);
-      const li = document.createElement('li');
-      li.role = 'option';
-      li.className = 'block-item';
-      li.dataset.cp = b.s;
-      li.dataset.group = group;
-      li.title = `U+${D.hex(b.s)}–U+${D.hex(b.e)}`;
-      li.innerHTML =
-        `<div class="block-item-head">` +
-          `<span class="swatch" data-group="${group}"></span>` +
-          `<span class="block-item-name">` +
-            `<span class="name-ja">${escapeHtml(ja || en)}</span>` +
-            (ja ? `<span class="name-en">${escapeHtml(en)}</span>` : '') +
-          `</span>` +
-        `</div>` +
-        (samples.length
-          ? `<div class="block-item-samples">${samples.map((cp) => `<span class="sample-glyph">${escapeHtml(D.glyphFor(cp))}</span>`).join('')}</div>`
-          : '');
-      li.addEventListener('click', () => {
-        this.onJump(b.s);
-        this.close();
-      });
-      frag.appendChild(li);
-    }
-    this.listEl.appendChild(frag);
-    this.items = [...this.listEl.querySelectorAll('.block-item')];
+    const { items, planeHeaders } = buildBlockList(this.listEl, this.mode(), (b) => {
+      this.onJump(b.s);
+      this.close();
+    });
+    this.items = items;
+    this.planeHeaders = planeHeaders;
   }
 
   buildPlaneJump() {
@@ -275,6 +324,6 @@ function escapeHtml(s) {
   return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
-window.App.Blocks = { BlockHeader, legendHtmlFor, Legend };
+window.App.Blocks = { BlockHeader, legendHtmlFor, Legend, BlockSidebar };
 
 })();

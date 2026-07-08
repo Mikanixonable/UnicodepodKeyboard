@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="color-scheme" content="dark light">
   <title>Unicodepod Keyboard</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='14' fill='%236ea8fe'/%3E%3Ctext x='32' y='45' font-family='system-ui,sans-serif' font-size='36' font-weight='700' fill='white' text-anchor='middle'%3EU%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='14' fill='%234cb8d2'/%3E%3Ctext x='32' y='45' font-family='system-ui,sans-serif' font-size='36' font-weight='700' fill='white' text-anchor='middle'%3EU%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
   <!-- @font-face rules for bundled rare-script fonts (fonts/*.woff2); each
        has a unicode-range so the browser only downloads it when the "拡張"
@@ -26,6 +27,7 @@
         <span class="site-icon" aria-hidden="true">U</span>
         <h1 class="site-title">Unicodepod Keyboard</h1>
       </header>
+      <div id="attr-legend" class="attr-legend"></div>
     </aside>
 
     <!-- 中央コンテンツゾーン -->
@@ -44,6 +46,8 @@
             <button type="button" id="del-btn" class="btn" title="1字削除">⌫</button>
             <button type="button" id="undo-btn" class="btn" title="元に戻す">↶</button>
             <button type="button" id="redo-btn" class="btn" title="やり直す">↷</button>
+            <button type="button" id="output-add-mylist-btn" class="btn" title="出力欄の全文字をマイリストへ追加">★＋ 全て追加</button>
+            <button type="button" id="output-remove-mylist-btn" class="btn" title="出力欄の全文字をマイリストから削除">★－ 全て削除</button>
           </div>
           <span id="count" class="count"></span>
         </div>
@@ -60,11 +64,10 @@
             <span class="font-label">フォント</span>
             <button type="button" class="font-opt" data-font="system">システム</button>
             <button type="button" class="font-opt" data-font="noto">Noto</button>
-            <button type="button" class="font-opt" data-font="extended" title="西夏文字・変体仮名など、希少スクリプト用フォントを同梱(約6MB)">拡張</button>
+            <button type="button" class="font-opt" data-font="extended"
+              title="西夏文字・変体仮名など、希少スクリプト用フォントを同梱(約6MB)">拡張</button>
           </div>
         </div>
-
-        <div id="attr-legend" class="attr-legend"></div>
 
         <div id="panel-all" class="panel">
           <div id="block-header" class="block-header"></div>
@@ -92,8 +95,11 @@
       </section>
     </div>
 
-    <!-- 右メニューゾーン（予備） -->
-    <aside class="menu-zone menu-right"></aside>
+    <!-- 右メニューゾーン -->
+    <aside class="menu-zone menu-right">
+      <div id="jump-form-slot" class="jump-form-slot"></div>
+      <div id="block-sidebar" class="block-sidebar"></div>
+    </aside>
   </div>
 
   <!-- 詳細モーダル -->

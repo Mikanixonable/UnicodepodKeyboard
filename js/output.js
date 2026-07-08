@@ -6,6 +6,8 @@ const seg = (typeof Intl !== 'undefined' && Intl.Segmenter)
   ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
   : null;
 
+const TEXT_KEY = 'unicode-app:output-text:v1';
+
 function graphemes(str) {
   if (seg) return [...seg.segment(str)].map(s => s.segment);
   return [...str]; // fallback: code points
@@ -18,9 +20,14 @@ class OutputArea {
     this.onCopyDone = onCopyDone;
     this.onPasteFail = onPasteFail;
     this.onChange = onChange;
-    this.history = [{ value: '', sel: 0 }];
-    this.hi = 0;
     this.coalesceTimer = null;
+
+    try {
+      const saved = localStorage.getItem(TEXT_KEY);
+      if (saved) this.ta.value = saved;
+    } catch { /* storage disabled */ }
+    this.history = [this.snapshot()];
+    this.hi = 0;
 
     this.ta.addEventListener('input', () => this.onUserInput());
     this.ta.addEventListener('blur', () => this.commit());
@@ -176,6 +183,7 @@ class OutputArea {
       const gr = graphemes(v).length;
       this.countEl.textContent = `${gr} 文字 / ${cps} コードポイント`;
     }
+    try { localStorage.setItem(TEXT_KEY, v); } catch { /* storage disabled / full */ }
     if (this.onChange) this.onChange(v);
   }
 }

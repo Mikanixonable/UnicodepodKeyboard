@@ -6,6 +6,7 @@ const D = window.App.Data;
 const { openMenu } = window.App.Menu;
 
 const BUFFER = 6; // extra rows above/below viewport
+const SCROLL_KEY = 'unicode-app:scroll-cp:v1';
 
 class Grid {
   constructor(root, { onInsert, onDetail, onAddMenu, onReveal, mylists, colorMode, onTopCpChange }) {
@@ -43,6 +44,24 @@ class Grid {
     this.colorMode.subscribe(() => this.rerender());
     window.addEventListener('resize', () => this.refreshLayout(true));
     this.refreshLayout(true);
+
+    // restore scroll position (by codepoint, not raw pixels -- rowH depends
+    // on viewport width, which may differ from the session that saved it)
+    try {
+      const saved = localStorage.getItem(SCROLL_KEY);
+      if (saved != null) {
+        const cp = Number(saved);
+        if (Number.isFinite(cp) && D.inScope(cp)) this.scrollToCp(cp);
+      }
+    } catch { /* storage disabled */ }
+  }
+
+  // Debounced so rapid scroll events don't hammer localStorage.
+  saveScrollPos(cp) {
+    clearTimeout(this.scrollSaveTimer);
+    this.scrollSaveTimer = setTimeout(() => {
+      try { localStorage.setItem(SCROLL_KEY, String(cp)); } catch { /* storage disabled / full */ }
+    }, 250);
   }
 
   onScroll() {
@@ -86,6 +105,7 @@ class Grid {
     if (topCp !== this.lastTopCp) {
       this.lastTopCp = topCp;
       if (this.onTopCpChange) this.onTopCpChange(topCp);
+      this.saveScrollPos(topCp);
     }
 
     if (!force && start === this.lastStart) return;
