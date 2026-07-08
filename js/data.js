@@ -112,6 +112,115 @@ function getBlocks() {
   return blocks;
 }
 
+// ---- attribute groups (for color coding) ---------------------------------
+
+// Official Unicode blocks whose content is predominantly emoji/pictographs.
+// General_Category alone can't tell "So (symbol)" apart from "So (emoji)",
+// so this is a name-based override applied after category classification.
+const EMOJI_BLOCK_RE = /Emoticons|Pictographs|Transport and Map/i;
+
+// Collapses a General_Category code down to one of a small set of groups
+// used for color coding, in both the grid and the block picker.
+function categoryGroup(cat) {
+  if (cat === 'Cs') return 'surrogate';
+  if (cat === 'Co') return 'private';
+  if (cat === 'Cc') return 'control';
+  if (cat === 'Cf') return 'format';
+  if (cat === 'Cn') return 'unassigned';
+  switch (cat[0]) {
+    case 'L': return 'letter';
+    case 'M': return 'mark';
+    case 'N': return 'number';
+    case 'P': return 'punct';
+    case 'S': return 'symbol';
+    case 'Z': return 'separator';
+    default: return 'unassigned';
+  }
+}
+
+// Attribute group of a single codepoint (drives grid cell color coding).
+function groupOf(cp) {
+  const g = categoryGroup(categoryOf(cp));
+  if (g === 'symbol') {
+    const b = blockOf(cp);
+    if (b && EMOJI_BLOCK_RE.test(b.n)) return 'emoji';
+  }
+  return g;
+}
+
+// First run index whose end is >= s (catRuns is sorted, non-overlapping).
+function catRunLowerBound(s) {
+  let lo = 0, hi = catRuns.length - 1, idx = catRuns.length;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (catRuns[mid][1] >= s) { idx = mid; hi = mid - 1; } else lo = mid + 1;
+  }
+  return idx;
+}
+
+// Dominant attribute group across a whole codepoint range (drives the block
+// picker swatch). Unassigned codepoints don't count towards the total unless
+// the entire range is unassigned, so a block with a handful of assigned
+// characters still gets a meaningful color instead of always reading empty.
+function dominantGroupForRange(s, e) {
+  const totals = {};
+  let assignedTotal = 0;
+  for (let i = catRunLowerBound(s); i < catRuns.length; i++) {
+    const [rs, re, cat] = catRuns[i];
+    if (rs > e) break;
+    const os = Math.max(rs, s), oe = Math.min(re, e);
+    if (os > oe || cat === 'Cn') continue;
+    const g = categoryGroup(cat);
+    const len = oe - os + 1;
+    totals[g] = (totals[g] || 0) + len;
+    assignedTotal += len;
+  }
+  if (assignedTotal === 0) return 'unassigned';
+  let best = null, bestLen = -1;
+  for (const g in totals) if (totals[g] > bestLen) { best = g; bestLen = totals[g]; }
+  return best;
+}
+
+function blockGroup(block) {
+  const g = dominantGroupForRange(block.s, block.e);
+  if (g === 'symbol' && EMOJI_BLOCK_RE.test(block.n)) return 'emoji';
+  return g;
+}
+
+// ---- bilingual block labels -----------------------------------------------
+
+// Hand-curated translations (data/block_names_ja.js) don't cover every one of
+// the ~340 official blocks -- many are little-known historic scripts. Where a
+// systematic "<base> <suffix>" variant (e.g. "... Extended-A") is missing but
+// its base name is known, derive the translation instead of leaving it blank.
+const JA_SUFFIXES = [
+  [' Supplement', '補助'],
+  [' Extended-A', '拡張A'], [' Extended-B', '拡張B'], [' Extended-C', '拡張C'],
+  [' Extended-D', '拡張D'], [' Extended-E', '拡張E'], [' Extended-F', '拡張F'],
+  [' Extended-G', '拡張G'],
+  [' Extension A', '拡張A'], [' Extension B', '拡張B'], [' Extension C', '拡張C'],
+  [' Extension D', '拡張D'], [' Extension E', '拡張E'], [' Extension F', '拡張F'],
+  [' Extension G', '拡張G'], [' Extension H', '拡張H'],
+  [' Additional', '追加'],
+];
+
+// { ja, en } for a block name. `ja` is null when no translation is known or
+// derivable -- callers should fall back to showing `en` alone rather than
+// inventing a translation.
+function blockLabel(name) {
+  const dict = window.UNICODE_BLOCK_NAMES_JA || {};
+  let ja = dict[name] || null;
+  if (!ja) {
+    for (const [suf, jaSuf] of JA_SUFFIXES) {
+      if (name.endsWith(suf) && dict[name.slice(0, -suf.length)]) {
+        ja = dict[name.slice(0, -suf.length)] + jaSuf;
+        break;
+      }
+    }
+  }
+  return { ja, en: name };
+}
+
 // ---- row model (virtual grid) -------------------------------------------
 
 const segRows = SEGMENTS.map(([s, e]) => Math.ceil((e - s + 1) / COLS));
@@ -241,6 +350,7 @@ window.App.Data = {
   isCombining, glyphFor, blockOf, getBlocks, rowToBaseCp, cpToRow,
   neighborInsertable, algorithmicName, nameSync, getName, categoryDesc,
   utf8Bytes, utf16Units,
+  categoryGroup, groupOf, dominantGroupForRange, blockGroup, blockLabel,
 };
 
 })();

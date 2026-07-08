@@ -16,6 +16,20 @@
   /* glyph font: default follows the OS; toggled to Noto via [data-font] */
   --font-glyph: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     "Noto Sans", "Noto Sans CJK JP", "Noto Color Emoji", sans-serif;
+
+  /* attribute-group colors: shared by grid cells and the block picker swatch */
+  --grp-letter: #60a5fa;
+  --grp-mark: #34d399;
+  --grp-number: #fbbf24;
+  --grp-punct: #a78bfa;
+  --grp-symbol: #f472b6;
+  --grp-emoji: #fb7185;
+  --grp-separator: #67e8f9;
+  --grp-control: #ef4444;
+  --grp-format: #9ca3af;
+  --grp-surrogate: #c084fc;
+  --grp-private: #eab308;
+  --grp-unassigned: #52525b;
 }
 
 /* Noto stack: lists many script-specific Noto families so the browser falls
@@ -139,10 +153,15 @@ button { font: inherit; cursor: pointer; }
 .block-bar { display: flex; align-items: center; gap: 8px; }
 .block-btn {
   display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;
-  padding: 6px 12px; border: 1px solid var(--border); border-radius: 9px;
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 9px;
   background: var(--elevated); color: var(--text); font-weight: 600;
 }
-.block-btn .block-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.block-btn .swatch { flex: none; }
+.block-btn .block-name { min-width: 0; line-height: 1.2; text-align: left; }
+.block-btn .name-ja, .block-btn .name-en {
+  display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.block-btn .name-en { font-size: .68rem; font-weight: 400; color: var(--muted); }
 .block-btn .caret { color: var(--muted); }
 
 .jump {
@@ -169,7 +188,7 @@ button { font: inherit; cursor: pointer; }
 
 .block-pop {
   position: absolute; z-index: 30; top: calc(100% - 4px); left: clamp(10px, 3vw, 20px);
-  width: min(360px, calc(100vw - 24px)); max-height: 60vh; display: flex; flex-direction: column;
+  width: min(760px, calc(100vw - 24px)); max-height: 70vh; display: flex; flex-direction: column;
   background: var(--elevated); border: 1px solid var(--border); border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0,0,0,.45); overflow: hidden;
 }
@@ -178,11 +197,60 @@ button { font: inherit; cursor: pointer; }
   background: var(--panel-2); color: var(--text);
 }
 .block-search:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-.block-list { list-style: none; margin: 0; padding: 0 6px 8px; overflow-y: auto; }
-.block-item { padding: 8px 10px; border-radius: 7px; cursor: pointer; }
-.block-item:hover { background: var(--panel-2); }
-.block-item.active { color: var(--accent); font-weight: 600; }
+
+/* attribute-color legend shown above the palette */
+.block-legend {
+  display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 8px 8px; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2);
+}
+.legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; color: var(--muted); }
+
+.swatch {
+  display: inline-block; flex: none; width: .6rem; height: .6rem; border-radius: 3px;
+  background: var(--grp-color, var(--muted)); box-shadow: 0 0 0 1px rgba(0,0,0,.25);
+}
+.swatch[data-group="letter"]     { --grp-color: var(--grp-letter); }
+.swatch[data-group="mark"]       { --grp-color: var(--grp-mark); }
+.swatch[data-group="number"]     { --grp-color: var(--grp-number); }
+.swatch[data-group="punct"]      { --grp-color: var(--grp-punct); }
+.swatch[data-group="symbol"]     { --grp-color: var(--grp-symbol); }
+.swatch[data-group="emoji"]      { --grp-color: var(--grp-emoji); }
+.swatch[data-group="separator"]  { --grp-color: var(--grp-separator); }
+.swatch[data-group="control"]    { --grp-color: var(--grp-control); }
+.swatch[data-group="format"]     { --grp-color: var(--grp-format); }
+.swatch[data-group="surrogate"]  { --grp-color: var(--grp-surrogate); }
+.swatch[data-group="private"]    { --grp-color: var(--grp-private); }
+.swatch[data-group="unassigned"] { --grp-color: var(--grp-unassigned); }
+
+/* 2D palette: many blocks per row instead of one long vertical list */
+.block-list {
+  list-style: none; margin: 0; padding: 0 8px 8px; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 4px;
+}
+.block-item {
+  display: flex; align-items: center; gap: 7px; padding: 7px 8px; border-radius: 7px;
+  cursor: pointer; border: 1px solid transparent; min-width: 0;
+  background: color-mix(in srgb, var(--grp-color, transparent) 10%, transparent);
+}
+.block-item:hover { border-color: var(--border); background: color-mix(in srgb, var(--grp-color, transparent) 20%, var(--panel-2)); }
+.block-item.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .block-item[hidden] { display: none; }
+.block-item[data-group="letter"]     { --grp-color: var(--grp-letter); }
+.block-item[data-group="mark"]       { --grp-color: var(--grp-mark); }
+.block-item[data-group="number"]     { --grp-color: var(--grp-number); }
+.block-item[data-group="punct"]      { --grp-color: var(--grp-punct); }
+.block-item[data-group="symbol"]     { --grp-color: var(--grp-symbol); }
+.block-item[data-group="emoji"]      { --grp-color: var(--grp-emoji); }
+.block-item[data-group="separator"]  { --grp-color: var(--grp-separator); }
+.block-item[data-group="control"]    { --grp-color: var(--grp-control); }
+.block-item[data-group="format"]     { --grp-color: var(--grp-format); }
+.block-item[data-group="surrogate"]  { --grp-color: var(--grp-surrogate); }
+.block-item[data-group="private"]    { --grp-color: var(--grp-private); }
+.block-item[data-group="unassigned"] { --grp-color: var(--grp-unassigned); }
+
+.block-item-name { min-width: 0; line-height: 1.25; }
+.block-item .name-ja { display: block; font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.block-item .name-en { display: block; font-size: .66rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- grid ---------- */
 .grid { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -219,9 +287,33 @@ button { font: inherit; cursor: pointer; }
 }
 .cell .glyph { font-size: clamp(1.05rem, 4.4vw, 1.5rem); line-height: 1.05; font-family: var(--font-glyph); }
 .cell .cp { font-size: .58rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* attribute-group color coding: a subtle tint plus a full-color bottom edge,
+   so the color reads as a cue without hurting glyph legibility */
+.cell[data-group] {
+  background: color-mix(in srgb, var(--grp-color, transparent) 11%, transparent);
+  box-shadow: inset 0 -2px 0 0 color-mix(in srgb, var(--grp-color, transparent) 55%, transparent);
+}
+.cell[data-group="letter"]     { --grp-color: var(--grp-letter); }
+.cell[data-group="mark"]       { --grp-color: var(--grp-mark); }
+.cell[data-group="number"]     { --grp-color: var(--grp-number); }
+.cell[data-group="punct"]      { --grp-color: var(--grp-punct); }
+.cell[data-group="symbol"]     { --grp-color: var(--grp-symbol); }
+.cell[data-group="emoji"]      { --grp-color: var(--grp-emoji); }
+.cell[data-group="separator"]  { --grp-color: var(--grp-separator); }
+.cell[data-group="control"]    { --grp-color: var(--grp-control); }
+.cell[data-group="format"]     { --grp-color: var(--grp-format); }
+.cell[data-group="surrogate"]  { --grp-color: var(--grp-surrogate); }
+.cell[data-group="private"]    { --grp-color: var(--grp-private); }
+.cell[data-group="unassigned"] { --grp-color: var(--grp-unassigned); }
+
 .cell:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .cell:active { background: color-mix(in srgb, var(--accent) 28%, transparent); }
 .cell.fav { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--fav) 65%, transparent); }
+.cell.fav[data-group] {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--fav) 65%, transparent),
+              inset 0 -2px 0 0 color-mix(in srgb, var(--grp-color, transparent) 55%, transparent);
+}
 .cell.fav::after {
   content: "★"; position: absolute; top: 2px; right: 3px; font-size: .5rem; color: var(--fav);
 }
@@ -232,6 +324,11 @@ button { font: inherit; cursor: pointer; }
 .cell.empty { background: repeating-linear-gradient(45deg, transparent, transparent 5px,
   color-mix(in srgb, var(--border) 30%, transparent) 5px, color-mix(in srgb, var(--border) 30%, transparent) 6px);
   border-left: 1px solid color-mix(in srgb, var(--border) 30%, transparent); }
+/* empty cells (unassigned / surrogate / control) get a group-tinted hatch
+   instead of the neutral one, so those "area attributes" stay visible too */
+.cell.empty[data-group] { background: repeating-linear-gradient(45deg, transparent, transparent 5px,
+  color-mix(in srgb, var(--grp-color, var(--border)) 32%, transparent) 5px,
+  color-mix(in srgb, var(--grp-color, var(--border)) 32%, transparent) 6px); }
 .cell.flash { animation: cell-flash 1.3s ease; z-index: 1; }
 @keyframes cell-flash {
   0%, 100% { box-shadow: inset 0 0 0 0 transparent; background: transparent; }

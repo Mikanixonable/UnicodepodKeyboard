@@ -14,7 +14,11 @@ class BlockHeader {
     root.innerHTML = `
       <div class="block-bar">
         <button type="button" class="block-btn" aria-haspopup="listbox" aria-expanded="false">
-          <span class="block-name">—</span>
+          <span class="swatch"></span>
+          <span class="block-name">
+            <span class="name-ja">—</span>
+            <span class="name-en"></span>
+          </span>
           <span class="caret">▾</span>
         </button>
         <form class="jump" autocomplete="off">
@@ -26,11 +30,14 @@ class BlockHeader {
       </div>
       <div class="block-pop" hidden>
         <input type="text" class="block-search" placeholder="ブロックを検索…" aria-label="ブロック検索">
+        <div class="block-legend">${this.legendHtml()}</div>
         <ul class="block-list" role="listbox"></ul>
       </div>`;
 
     this.btn = root.querySelector('.block-btn');
-    this.nameEl = root.querySelector('.block-name');
+    this.swatchEl = root.querySelector('.block-btn > .swatch');
+    this.nameJaEl = root.querySelector('.block-btn .name-ja');
+    this.nameEnEl = root.querySelector('.block-btn .name-en');
     this.pop = root.querySelector('.block-pop');
     this.search = root.querySelector('.block-search');
     this.listEl = root.querySelector('.block-list');
@@ -51,15 +58,34 @@ class BlockHeader {
     });
   }
 
+  legendHtml() {
+    const LABELS = {
+      letter: '文字', mark: '記号(結合)', number: '数字', punct: '句読点',
+      symbol: '記号', emoji: '絵文字', separator: '区切り', control: '制御',
+      format: '書式', surrogate: 'サロゲート', private: '私用領域', unassigned: '未割り当て',
+    };
+    return Object.entries(LABELS)
+      .map(([g, label]) => `<span class="legend-item"><span class="swatch" data-group="${g}"></span>${label}</span>`)
+      .join('');
+  }
+
   buildList() {
     const frag = document.createDocumentFragment();
     for (const b of D.getBlocks()) {
+      const { ja, en } = D.blockLabel(b.n);
+      const group = D.blockGroup(b);
       const li = document.createElement('li');
       li.role = 'option';
       li.className = 'block-item';
       li.dataset.cp = b.s;
-      li.textContent = b.n;
+      li.dataset.group = group;
       li.title = `U+${D.hex(b.s)}–U+${D.hex(b.e)}`;
+      li.innerHTML =
+        `<span class="swatch" data-group="${group}"></span>` +
+        `<span class="block-item-name">` +
+        `<span class="name-ja">${escapeHtml(ja || en)}</span>` +
+        (ja ? `<span class="name-en">${escapeHtml(en)}</span>` : '') +
+        `</span>`;
       li.addEventListener('click', () => {
         this.onJump(b.s);
         this.close();
@@ -98,7 +124,10 @@ class BlockHeader {
     const name = b ? b.n : 'No Block';
     if (name === this.current) return;
     this.current = name;
-    this.nameEl.textContent = name;
+    const { ja, en } = b ? D.blockLabel(b.n) : { ja: null, en: name };
+    this.nameJaEl.textContent = ja || en;
+    this.nameEnEl.textContent = ja ? en : '';
+    this.swatchEl.dataset.group = b ? D.blockGroup(b) : '';
     // highlight active item
     for (const li of this.items)
       li.classList.toggle('active', b && Number(li.dataset.cp) === b.s);
@@ -122,6 +151,10 @@ class BlockHeader {
     this.pop.hidden = true;
     this.btn.setAttribute('aria-expanded', 'false');
   }
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
 window.App.Blocks = { BlockHeader };

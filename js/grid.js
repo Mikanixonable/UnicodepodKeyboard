@@ -85,9 +85,15 @@ class Grid {
   }
 
   buildCell(cp) {
-    if (!D.inScope(cp) || D.isEmptyCell(cp)) {
+    if (!D.inScope(cp)) {
       const d = document.createElement('div');
       d.className = 'cell empty';
+      return d;
+    }
+    if (D.isEmptyCell(cp)) {
+      const d = document.createElement('div');
+      d.className = 'cell empty';
+      d.dataset.group = D.groupOf(cp); // unassigned / surrogate / control
       return d;
     }
     const b = document.createElement('button');
@@ -96,6 +102,7 @@ class Grid {
     if (this.fav.has(cp)) b.classList.add('fav');
     if (D.isBlankGlyph(cp)) b.classList.add('blank');
     b.dataset.cp = cp;
+    b.dataset.group = D.groupOf(cp);
     b.innerHTML =
       `<span class="glyph">${escapeHtml(D.glyphFor(cp))}</span>` +
       `<span class="cp">${D.hex(cp)}</span>`;

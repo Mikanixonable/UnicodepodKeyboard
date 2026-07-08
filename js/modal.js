@@ -75,10 +75,14 @@ class DetailModal {
     const cp = this.cp;
     this.glyphEl.textContent = D.glyphFor(cp);
     const cat = D.categoryOf(cp);
+    const block = D.blockOf(cp);
+    const blockText = block
+      ? (D.blockLabel(block.n).ja ? `${D.blockLabel(block.n).ja}（${block.n}）` : block.n)
+      : 'No Block';
     const rows = [
       ['コードポイント', `U+${D.hex(cp)}`],
       ['10進', String(cp)],
-      ['ブロック', (D.blockOf(cp)?.n) || 'No Block'],
+      ['ブロック', blockText],
       ['分類', `${cat} — ${D.categoryDesc(cat)}`],
       ['UTF-8', D.utf8Bytes(cp).join(' ')],
       ['UTF-16', D.utf16Units(cp).join(' ')],
