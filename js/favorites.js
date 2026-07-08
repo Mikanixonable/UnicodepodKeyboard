@@ -178,6 +178,23 @@ class MyLists {
     return list;
   }
 
+  renameList(id, name) {
+    const list = this.findList(id);
+    if (!list || list.builtIn) return false;
+    const base = normalizeName(name, list.name);
+    const existing = new Set(this.state.lists.filter((l) => l.id !== id).map((l) => l.name));
+    let finalName = base;
+    let suffix = 2;
+    while (existing.has(finalName)) {
+      finalName = `${base} ${suffix}`;
+      suffix += 1;
+    }
+    list.name = finalName;
+    this.save();
+    this.emit();
+    return true;
+  }
+
   removeList(id) {
     const list = this.findList(id);
     if (!list || list.builtIn) return false;

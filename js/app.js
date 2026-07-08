@@ -85,6 +85,7 @@ async function main() {
       </label>
       <div class="mylist-actions">
         <button type="button" id="mylist-add" class="btn small">＋ 作成</button>
+        <button type="button" id="mylist-rename" class="btn small">名前変更</button>
         <button type="button" id="mylist-delete" class="btn small danger">削除</button>
       </div>
     </div>
@@ -96,6 +97,7 @@ async function main() {
   const favBoard = $('#fav-board');
   const mylistSelect = $('#mylist-select');
   const mylistAddBtn = $('#mylist-add');
+  const mylistRenameBtn = $('#mylist-rename');
   const mylistDeleteBtn = $('#mylist-delete');
   const mylistStatus = $('#mylist-status');
   const histBoard = $('#history-board');
@@ -103,7 +105,7 @@ async function main() {
   function renderMyListControls() {
     mylistSelect.innerHTML = mylists.lists.map((list) => {
       const count = list.items.length;
-      const label = `${list.icon} ${list.name}${list.builtIn ? '（既定）' : ''} ・ ${count}`;
+      const label = `${list.icon} ${list.name}`;
       return `<option value="${list.id}">${escapeHtml(label)}</option>`;
     }).join('');
     mylistSelect.value = mylists.activeId;
@@ -111,6 +113,8 @@ async function main() {
     mylistStatus.textContent = `${active.icon} ${active.name} ・ ${active.items.length} 件`;
     mylistDeleteBtn.disabled = !mylists.canDeleteActive();
     mylistDeleteBtn.title = mylists.canDeleteActive() ? `${active.name} を削除` : 'お気に入りは削除できません';
+    mylistRenameBtn.disabled = active.builtIn;
+    mylistRenameBtn.title = active.builtIn ? 'お気に入りは名前を変更できません' : `${active.name} の名前を変更`;
   }
 
   const drawFav = () => renderCharBoard(favBoard, mylists.activeList.items, mylists,
@@ -129,6 +133,13 @@ async function main() {
     const name = window.prompt('新しいマイリスト名を入力してください', suggested);
     if (!name) return;
     mylists.createList(name);
+  });
+  mylistRenameBtn.addEventListener('click', () => {
+    const active = mylists.activeList;
+    if (!active || active.builtIn) return;
+    const name = window.prompt('新しい名前を入力してください', active.name);
+    if (!name) return;
+    mylists.renameList(active.id, name);
   });
   mylistDeleteBtn.addEventListener('click', () => {
     const active = mylists.activeList;

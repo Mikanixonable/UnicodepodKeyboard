@@ -91,7 +91,7 @@ class DetailModal {
     const block = D.blockOf(cp);
     const blockText = block
       ? (D.blockLabel(block.n).ja ? `${D.blockLabel(block.n).ja}（${block.n}）` : block.n)
-      : 'No Block';
+      : '未割り当て（No Block）';
     const rows = [
       ['コードポイント', `U+${D.hex(cp)}`],
       ['10進', String(cp)],

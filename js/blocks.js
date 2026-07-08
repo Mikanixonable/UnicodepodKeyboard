@@ -124,7 +124,7 @@ class BlockHeader {
     const name = b ? b.n : 'No Block';
     if (name === this.current) return;
     this.current = name;
-    const { ja, en } = b ? D.blockLabel(b.n) : { ja: null, en: name };
+    const { ja, en } = b ? D.blockLabel(b.n) : { ja: '未割り当て', en: name };
     this.nameJaEl.textContent = ja || en;
     this.nameEnEl.textContent = ja ? en : '';
     this.swatchEl.dataset.group = b ? D.blockGroup(b) : '';
