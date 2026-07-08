@@ -135,7 +135,7 @@ class Grid {
     b.dataset.group = D.groupForMode(mode, cp) || '';
     b.innerHTML =
       `<span class="glyph">${escapeHtml(D.glyphFor(cp))}</span>` +
-      `<span class="cp">${D.hex(cp)}</span>`;
+      `<span class="cp">U+${D.hex(cp)}</span>`;
     return b;
   }
 

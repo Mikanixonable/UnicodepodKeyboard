@@ -290,7 +290,7 @@ function renderCharBoard(el, list, mylists, colorMode, emptyHtml) {
     b.dataset.group = D.groupForMode(mode, cp) || '';
     b.dataset.badge = mylists.activeList.icon;
     b.style.setProperty('--list-badge-color', mylists.activeList.icon === '★' ? 'var(--fav)' : 'var(--accent)');
-    b.innerHTML = `<span class="glyph">${D.glyphFor(cp)}</span><span class="cp">${D.hex(cp)}</span>`;
+    b.innerHTML = `<span class="glyph">${D.glyphFor(cp)}</span><span class="cp">U+${D.hex(cp)}</span>`;
     wrap.appendChild(b);
   }
   el.replaceChildren(wrap);
