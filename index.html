@@ -38,6 +38,12 @@
       <button type="button" class="mode-tab" data-mode="current" role="tab">入力内容</button>
       <button type="button" class="mode-tab" data-mode="history" role="tab">入力履歴</button>
       <button type="button" class="mode-tab" data-mode="fav" role="tab">マイリスト</button>
+      <div class="colormode-toggle" role="group" aria-label="色分け方式">
+        <span class="font-label">色分け</span>
+        <button type="button" class="colormode-opt" data-colormode="none">なし</button>
+        <button type="button" class="colormode-opt" data-colormode="category">種類</button>
+        <button type="button" class="colormode-opt" data-colormode="age">追加時期</button>
+      </div>
       <div class="font-toggle" role="group" aria-label="表示フォント">
         <span class="font-label">フォント</span>
         <button type="button" class="font-opt" data-font="system">システム</button>
@@ -82,11 +88,13 @@
   <script src="data/segments.js" defer></script>
   <script src="data/blocks.js" defer></script>
   <script src="data/categories.js" defer></script>
+  <script src="data/age.js" defer></script>
   <script src="data/block_names_ja.js" defer></script>
 
   <!-- App scripts: classic (non-module) so file:// works; defer preserves order. -->
   <script src="js/data.js" defer></script>
   <script src="js/menu.js" defer></script>
+  <script src="js/colormode.js" defer></script>
   <script src="js/output.js" defer></script>
   <script src="js/favorites.js" defer></script>
   <script src="js/history.js" defer></script>

@@ -10,6 +10,8 @@ which is what makes the app work when opened directly as a local file
   segments.js    window.UNICODE_SEGMENTS = [[start, end], ...]  covered ranges
   blocks.js      window.UNICODE_BLOCKS = [{ "n": name, "s": start, "e": end }, ...]
   categories.js  window.UNICODE_CATEGORIES = RLE ranges [[start, end, "Cat"], ...]
+  age.js         window.UNICODE_AGE = RLE ranges [[start, end, "6.0"], ...]  Unicode
+                 version each codepoint was first assigned in (gaps = unassigned)
   names.js       window.UNICODE_NAMES = { "<hex>": "NAME" }  assigned, non-algorithmic chars only
 
 Scope: BMP plus supplementary planes 1-3 (historic scripts, symbols, emoji,
@@ -18,7 +20,8 @@ CJK Ext B-H) and plane 14, each trimmed to its last assigned codepoint
 compatibility ideographs, Hangul syllables) are excluded from names.js; the
 browser derives those names on the fly.
 
-Requires network only for Blocks.txt (Python's unicodedata has no block API).
+Requires network for Blocks.txt and DerivedAge.txt (Python's unicodedata has
+no block or age API).
 """
 import json
 import os
@@ -27,6 +30,7 @@ import unicodedata
 import urllib.request
 
 BLOCKS_URL = "https://www.unicode.org/Public/UCD/latest/ucd/Blocks.txt"
+AGE_URL = "https://www.unicode.org/Public/UCD/latest/ucd/DerivedAge.txt"
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
 # Candidate plane ranges to cover. Each is trimmed down to its last assigned
@@ -108,6 +112,36 @@ def fetch_blocks():
     return blocks
 
 
+def fetch_age():
+    """RLE [start, end, "X.Y"] of Unicode version each codepoint was assigned
+    in, clipped to SEGMENTS and merged across adjacent same-version runs."""
+    print("Fetching DerivedAge.txt ...", file=sys.stderr)
+    with urllib.request.urlopen(AGE_URL, timeout=30) as r:
+        text = r.read().decode("utf-8")
+    runs = []
+    for line in text.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        rng, _, ver = line.partition(";")
+        ver = ver.strip()
+        start_hex, _, end_hex = rng.strip().partition("..")
+        start = int(start_hex, 16)
+        end = int(end_hex, 16) if end_hex else start
+        for s, e in SEGMENTS:
+            os, oe = max(start, s), min(end, e)
+            if os <= oe:
+                runs.append([os, oe, ver])
+    runs.sort(key=lambda r: r[0])
+    merged = []
+    for r in runs:
+        if merged and merged[-1][2] == r[2] and merged[-1][1] + 1 == r[0]:
+            merged[-1][1] = r[1]
+        else:
+            merged.append(r)
+    return merged
+
+
 def build_categories():
     """Run-length encode General_Category over the scope."""
     runs = []
@@ -145,6 +179,7 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     blocks = fetch_blocks()
     cats = build_categories()
+    age = fetch_age()
     names = build_names()
 
     def dump(filename, varname, obj):
@@ -159,6 +194,7 @@ def main():
     dump("segments.js", "UNICODE_SEGMENTS", SEGMENTS)
     dump("blocks.js", "UNICODE_BLOCKS", blocks)
     dump("categories.js", "UNICODE_CATEGORIES", cats)
+    dump("age.js", "UNICODE_AGE", age)
     dump("names.js", "UNICODE_NAMES", names)
     print("done.", file=sys.stderr)
 

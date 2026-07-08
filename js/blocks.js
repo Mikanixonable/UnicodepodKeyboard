@@ -25,7 +25,17 @@ function planeLabel(p) {
   return `第${p}面（Plane ${p}）: ${ja}（${en}）`;
 }
 
-function legendHtml() {
+// Legend content depends on the current color-coding mode, so the grid,
+// boards, and block picker all read it from a single place.
+function legendHtmlFor(mode) {
+  if (mode === 'none') {
+    return '<span class="legend-item legend-none">色分けなし（No coloring）</span>';
+  }
+  if (mode === 'age') {
+    return D.ERAS
+      .map((e) => `<span class="legend-item"><span class="swatch" data-group="${e.key}"></span>${e.ja} <span class="legend-en">${e.en}</span></span>`)
+      .join('');
+  }
   return Object.entries(GROUP_LABELS)
     .map(([g, [ja, en]]) =>
       `<span class="legend-item"><span class="swatch" data-group="${g}"></span>${ja} <span class="legend-en">${en}</span></span>`)
@@ -33,11 +43,13 @@ function legendHtml() {
 }
 
 class BlockHeader {
-  constructor(root, { onJump }) {
+  constructor(root, { onJump, colorMode }) {
     this.root = root;
     this.onJump = onJump;
+    this.colorMode = colorMode;
     this.open = false;
     this.current = null;
+    this.currentBlock = null;
 
     root.innerHTML = `
       <div class="block-bar">
@@ -59,7 +71,7 @@ class BlockHeader {
       <div class="block-pop" hidden>
         <div class="plane-jump"></div>
         <input type="text" class="block-search" placeholder="ブロックを検索…" aria-label="ブロック検索">
-        <div class="block-legend">${this.legendHtml()}</div>
+        <div class="block-legend"></div>
         <ul class="block-list" role="listbox"></ul>
       </div>`;
 
@@ -69,6 +81,7 @@ class BlockHeader {
     this.nameEnEl = root.querySelector('.block-btn .name-en');
     this.pop = root.querySelector('.block-pop');
     this.planeJumpEl = root.querySelector('.plane-jump');
+    this.legendEl = root.querySelector('.block-legend');
     this.search = root.querySelector('.block-search');
     this.listEl = root.querySelector('.block-list');
     this.jumpForm = root.querySelector('.jump');
@@ -76,6 +89,7 @@ class BlockHeader {
 
     this.buildList();
     this.buildPlaneJump();
+    this.renderLegend();
 
     this.btn.addEventListener('click', () => this.toggle());
     this.search.addEventListener('input', () => this.filter(this.search.value));
@@ -88,16 +102,35 @@ class BlockHeader {
       if (this.open && e.key === 'Escape') { this.close(); this.btn.focus(); }
     });
     window.addEventListener('resize', () => { if (this.open) this.fitPop(); });
+    this.colorMode.subscribe(() => this.applyColorMode());
   }
 
-  legendHtml() {
-    return legendHtml();
+  mode() { return this.colorMode.get(); }
+
+  renderLegend() {
+    this.legendEl.innerHTML = legendHtmlFor(this.mode());
+  }
+
+  // Re-colors everything already in the DOM (list swatches + the current
+  // block indicator) after the color mode changes, without rebuilding.
+  applyColorMode() {
+    this.renderLegend();
+    const mode = this.mode();
+    for (const li of this.items) {
+      const b = D.blockOf(Number(li.dataset.cp));
+      const g = b ? (D.blockGroupForMode(mode, b) || '') : '';
+      li.dataset.group = g;
+      const sw = li.querySelector('.swatch');
+      if (sw) sw.dataset.group = g;
+    }
+    this.swatchEl.dataset.group = this.currentBlock ? (D.blockGroupForMode(mode, this.currentBlock) || '') : '';
   }
 
   buildList() {
     const frag = document.createDocumentFragment();
     let lastPlane = null;
     this.planeHeaders = [];
+    const mode = this.mode();
     for (const b of D.getBlocks()) {
       const plane = b.s >>> 16;
       if (plane !== lastPlane) {
@@ -110,7 +143,7 @@ class BlockHeader {
         this.planeHeaders.push({ plane, el: header });
       }
       const { ja, en } = D.blockLabel(b.n);
-      const group = D.blockGroup(b);
+      const group = D.blockGroupForMode(mode, b) || '';
       const li = document.createElement('li');
       li.role = 'option';
       li.className = 'block-item';
@@ -186,12 +219,13 @@ class BlockHeader {
   setTopCp(cp) {
     const b = D.blockOf(cp);
     const name = b ? b.n : 'No Block';
+    this.currentBlock = b;
+    this.swatchEl.dataset.group = b ? (D.blockGroupForMode(this.mode(), b) || '') : '';
     if (name === this.current) return;
     this.current = name;
     const { ja, en } = b ? D.blockLabel(b.n) : { ja: '未割り当て', en: name };
     this.nameJaEl.textContent = ja || en;
     this.nameEnEl.textContent = ja ? en : '';
-    this.swatchEl.dataset.group = b ? D.blockGroup(b) : '';
     // highlight active item
     for (const li of this.items)
       li.classList.toggle('active', b && Number(li.dataset.cp) === b.s);
@@ -230,6 +264,6 @@ function escapeHtml(s) {
   return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
-window.App.Blocks = { BlockHeader, legendHtml };
+window.App.Blocks = { BlockHeader, legendHtmlFor };
 
 })();

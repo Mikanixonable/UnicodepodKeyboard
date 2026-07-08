@@ -19,6 +19,7 @@ const ROW_H = 58; // px, must match --row-h in CSS
 
 let blocks = [];
 let catRuns = [];         // sorted [start, end, "Cat"]
+let ageRuns = [];         // sorted [start, end, "X.Y"], gaps = unassigned
 let namesMap = null;      // lazy
 let namesPromise = null;
 
@@ -27,6 +28,7 @@ let namesPromise = null;
 function loadCore() {
   blocks = window.UNICODE_BLOCKS || [];
   catRuns = window.UNICODE_CATEGORIES || [];
+  ageRuns = window.UNICODE_AGE || [];
   return Promise.resolve();
 }
 
@@ -185,6 +187,98 @@ function blockGroup(block) {
   const g = dominantGroupForRange(block.s, block.e);
   if (g === 'symbol' && EMOJI_BLOCK_RE.test(block.n)) return 'emoji';
   return g;
+}
+
+// ---- Unicode age / "added in version" color coding ------------------------
+
+// Version each codepoint was first assigned in ("6.0" etc.), or null for
+// codepoints with no entry in DerivedAge.txt (i.e. still unassigned).
+function ageOf(cp) {
+  let lo = 0, hi = ageRuns.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1, r = ageRuns[mid];
+    if (cp < r[0]) hi = mid - 1;
+    else if (cp > r[1]) lo = mid + 1;
+    else return r[2];
+  }
+  return null;
+}
+
+// Buckets Unicode's ~50 version numbers into a handful of "eras" so the
+// color legend stays readable. Boundaries follow major/notable releases.
+const ERAS = [
+  { key: 'e1', max: 1.1, ja: '1.x', en: 'v1.x (1991–93)' },
+  { key: 'e2', max: 3.2, ja: '2–3.x', en: 'v2–3.x (1996–2002)' },
+  { key: 'e3', max: 5.2, ja: '4–5.x', en: 'v4–5.x (2003–2009)' },
+  { key: 'e4', max: 6.3, ja: '6.x', en: 'v6.x (2010–2013)' },
+  { key: 'e5', max: 8.0, ja: '7–8.x', en: 'v7–8.x (2014–2015)' },
+  { key: 'e6', max: 10.0, ja: '9–10.x', en: 'v9–10.x (2016–2017)' },
+  { key: 'e7', max: 12.1, ja: '11–12.x', en: 'v11–12.x (2018–2019)' },
+  { key: 'e8', max: 14.0, ja: '13–14.x', en: 'v13–14.x (2020–2021)' },
+  { key: 'e9', max: 16.0, ja: '15–16.x', en: 'v15–16.x (2022–2024)' },
+  { key: 'e10', max: Infinity, ja: '17.x以降', en: 'v17.x+ (2025–)' },
+];
+
+function eraForVersion(v) {
+  for (const e of ERAS) if (v <= e.max) return e.key;
+  return ERAS[ERAS.length - 1].key;
+}
+
+// Age "attribute group" of a single codepoint (drives grid cell color coding
+// in age mode). Mirrors groupOf()'s role for category mode.
+function eraOf(cp) {
+  const age = ageOf(cp);
+  return age == null ? 'unassigned' : eraForVersion(parseFloat(age));
+}
+
+function eraLabel(key) {
+  if (key === 'unassigned') return { ja: '未割り当て', en: 'Unassigned' };
+  const e = ERAS.find((x) => x.key === key);
+  return e ? { ja: e.ja, en: e.en } : { ja: '?', en: '?' };
+}
+
+// First run index whose end is >= s (ageRuns is sorted, non-overlapping).
+function ageRunLowerBound(s) {
+  let lo = 0, hi = ageRuns.length - 1, idx = ageRuns.length;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (ageRuns[mid][1] >= s) { idx = mid; hi = mid - 1; } else lo = mid + 1;
+  }
+  return idx;
+}
+
+// Dominant era across a whole codepoint range (drives the block picker
+// swatch in age mode). Same "assigned codepoints only" logic as
+// dominantGroupForRange.
+function dominantEraForRange(s, e) {
+  const totals = {};
+  let assignedTotal = 0;
+  for (let i = ageRunLowerBound(s); i < ageRuns.length; i++) {
+    const [rs, re, ver] = ageRuns[i];
+    if (rs > e) break;
+    const os = Math.max(rs, s), oe = Math.min(re, e);
+    if (os > oe) continue;
+    const era = eraForVersion(parseFloat(ver));
+    const len = oe - os + 1;
+    totals[era] = (totals[era] || 0) + len;
+    assignedTotal += len;
+  }
+  if (assignedTotal === 0) return 'unassigned';
+  let best = null, bestLen = -1;
+  for (const era in totals) if (totals[era] > bestLen) { best = era; bestLen = totals[era]; }
+  return best;
+}
+
+// Mode-aware group lookups shared by the grid, boards, and block picker.
+// mode: 'none' | 'category' | 'age'. Returns null for 'none' (= no color).
+function groupForMode(mode, cp) {
+  if (mode === 'none') return null;
+  return mode === 'age' ? eraOf(cp) : groupOf(cp);
+}
+
+function blockGroupForMode(mode, block) {
+  if (mode === 'none') return null;
+  return mode === 'age' ? dominantEraForRange(block.s, block.e) : blockGroup(block);
 }
 
 // ---- bilingual block labels -----------------------------------------------
@@ -351,6 +445,7 @@ window.App.Data = {
   neighborInsertable, algorithmicName, nameSync, getName, categoryDesc,
   utf8Bytes, utf16Units,
   categoryGroup, groupOf, dominantGroupForRange, blockGroup, blockLabel,
+  ageOf, eraOf, eraLabel, ERAS, dominantEraForRange, groupForMode, blockGroupForMode,
 };
 
 })();

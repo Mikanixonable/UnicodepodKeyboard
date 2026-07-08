@@ -5,9 +5,10 @@ const { MyLists } = window.App.MyLists;
 const { History } = window.App.History;
 const { OutputArea } = window.App.Output;
 const { Grid } = window.App.Grid;
-const { BlockHeader } = window.App.Blocks;
+const { BlockHeader, legendHtmlFor } = window.App.Blocks;
 const { DetailModal } = window.App.Modal;
 const { openMenu } = window.App.Menu;
+const { ColorMode } = window.App.ColorMode;
 
 async function main() {
   await D.loadCore();
@@ -30,11 +31,12 @@ async function main() {
   // must already exist.
   const mylists = new MyLists();
   const history = new History();
+  const colorMode = new ColorMode();
   const currentBoard = $('#current-board');
   let revealInAll = null;
 
   function drawCurrent(text) {
-    renderCharBoard(currentBoard, distinctCodepoints(text), mylists,
+    renderCharBoard(currentBoard, distinctCodepoints(text), mylists, colorMode,
       '出力欄に文字を入力すると、ここに使われている文字が表示されます。');
   }
 
@@ -58,7 +60,9 @@ async function main() {
 
   // ---- modal, block header, grid ----------------------------------------
   // ---- attribute-color legend (shared by grid cells, block names, and boards) --
-  $('#attr-legend').innerHTML = window.App.Blocks.legendHtml();
+  const attrLegendEl = $('#attr-legend');
+  const renderAttrLegend = () => { attrLegendEl.innerHTML = legendHtmlFor(colorMode.get()); };
+  renderAttrLegend();
 
   const modal = new DetailModal($('#modal'), {
     onInsert: insert,
@@ -69,6 +73,7 @@ async function main() {
   });
   const header = new BlockHeader($('#block-header'), {
     onJump: (cp, flash) => grid.scrollToCp(cp, flash),
+    colorMode,
   });
   const grid = new Grid($('#grid'), {
     onInsert: insert,
@@ -76,8 +81,24 @@ async function main() {
     onAddMenu: (cp, x, y) => openMyListMenu(cp, x, y),
     onReveal: (cp, flash) => revealInAll && revealInAll(cp, flash),
     mylists,
+    colorMode,
     onTopCpChange: (cp) => header.setTopCp(cp),
   });
+
+  // ---- color-coding mode (none / category / age) -------------------------
+  const colorModeOpts = document.querySelectorAll('.colormode-opt');
+  const applyColorModeButtons = () => {
+    colorModeOpts.forEach((o) => o.classList.toggle('active', o.dataset.colormode === colorMode.get()));
+  };
+  colorModeOpts.forEach((o) => o.addEventListener('click', () => colorMode.set(o.dataset.colormode)));
+  colorMode.subscribe(() => {
+    applyColorModeButtons();
+    renderAttrLegend();
+    drawFav();
+    drawHist();
+    drawCurrent(output.ta.value);
+  });
+  applyColorModeButtons();
 
   // ---- mylist & history keyboards ---------------------------------------
   const favPanel = $('#panel-fav');
@@ -121,9 +142,9 @@ async function main() {
     mylistRenameBtn.title = active.builtIn ? 'お気に入りは名前を変更できません' : `${active.name} の名前を変更`;
   }
 
-  const drawFav = () => renderCharBoard(favBoard, mylists.activeList.items, mylists,
+  const drawFav = () => renderCharBoard(favBoard, mylists.activeList.items, mylists, colorMode,
     `${mylists.activeLabel} はまだありません。<br>文字を右クリック（または長押し）して「${mylists.activeLabel}に追加」してください。`);
-  const drawHist = () => renderCharBoard(histBoard, history.list, mylists,
+  const drawHist = () => renderCharBoard(histBoard, history.list, mylists, colorMode,
     '入力履歴はまだありません。<br>文字を入力すると、ここに新しい順で表示されます。');
 
   // mylist changes affect the badge on all three boards
@@ -251,11 +272,12 @@ function escapeHtml(s) {
 }
 
 // Render a list of codepoints as a clickable keyboard (mylist / history).
-function renderCharBoard(el, list, mylists, emptyHtml) {
+function renderCharBoard(el, list, mylists, colorMode, emptyHtml) {
   if (!list.length) {
     el.innerHTML = `<p class="fav-empty">${emptyHtml}</p>`;
     return;
   }
+  const mode = colorMode.get();
   const wrap = document.createElement('div');
   wrap.className = 'fav-grid';
   for (const cp of list) {
@@ -263,7 +285,7 @@ function renderCharBoard(el, list, mylists, emptyHtml) {
     b.type = 'button';
     b.className = 'cell' + (mylists.has(cp) ? ' fav' : '');
     b.dataset.cp = cp;
-    b.dataset.group = D.groupOf(cp);
+    b.dataset.group = D.groupForMode(mode, cp) || '';
     b.dataset.badge = mylists.activeList.icon;
     b.style.setProperty('--list-badge-color', mylists.activeList.icon === '★' ? 'var(--fav)' : 'var(--accent)');
     b.innerHTML = `<span class="glyph">${D.glyphFor(cp)}</span><span class="cp">${D.hex(cp)}</span>`;

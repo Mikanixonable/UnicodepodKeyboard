@@ -8,13 +8,14 @@ const { openMenu } = window.App.Menu;
 const BUFFER = 6; // extra rows above/below viewport
 
 class Grid {
-  constructor(root, { onInsert, onDetail, onAddMenu, onReveal, mylists, onTopCpChange }) {
+  constructor(root, { onInsert, onDetail, onAddMenu, onReveal, mylists, colorMode, onTopCpChange }) {
     this.root = root;
     this.onInsert = onInsert;
     this.onDetail = onDetail;
     this.onAddMenu = onAddMenu;
     this.onReveal = onReveal;
     this.fav = mylists;
+    this.colorMode = colorMode;
     this.onTopCpChange = onTopCpChange;
     this.rowH = D.ROW_H;
 
@@ -39,6 +40,7 @@ class Grid {
     this.scroll.addEventListener('scroll', () => this.onScroll());
     this.bindPointer();
     this.fav.subscribe(() => this.rerender());
+    this.colorMode.subscribe(() => this.rerender());
     window.addEventListener('resize', () => this.refreshLayout(true));
     this.refreshLayout(true);
   }
@@ -110,10 +112,11 @@ class Grid {
       d.className = 'cell empty';
       return d;
     }
+    const mode = this.colorMode.get();
     if (D.isEmptyCell(cp)) {
       const d = document.createElement('div');
       d.className = 'cell empty';
-      d.dataset.group = D.groupOf(cp); // unassigned / surrogate / control
+      d.dataset.group = D.groupForMode(mode, cp) || ''; // unassigned / surrogate / control
       return d;
     }
     const b = document.createElement('button');
@@ -122,7 +125,7 @@ class Grid {
     if (this.fav.has(cp)) b.classList.add('fav');
     if (D.isBlankGlyph(cp)) b.classList.add('blank');
     b.dataset.cp = cp;
-    b.dataset.group = D.groupOf(cp);
+    b.dataset.group = D.groupForMode(mode, cp) || '';
     b.innerHTML =
       `<span class="glyph">${escapeHtml(D.glyphFor(cp))}</span>` +
       `<span class="cp">${D.hex(cp)}</span>`;
