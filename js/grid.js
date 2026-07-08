@@ -130,11 +130,14 @@ class Grid {
     b.type = 'button';
     b.className = 'cell';
     if (this.fav.has(cp)) b.classList.add('fav');
-    if (D.isBlankGlyph(cp)) b.classList.add('blank');
+    const controlAbbr = D.controlAbbr(cp);
+    if (controlAbbr) b.classList.add('control');
+    else if (D.isBlankGlyph(cp)) b.classList.add('blank');
     b.dataset.cp = cp;
     b.dataset.group = D.groupForMode(mode, cp) || '';
+    const glyph = controlAbbr || escapeHtml(D.glyphFor(cp));
     b.innerHTML =
-      `<span class="glyph">${escapeHtml(D.glyphFor(cp))}</span>` +
+      `<span class="glyph">${glyph}</span>` +
       `<span class="cp">U+${D.hex(cp)}</span>`;
     return b;
   }

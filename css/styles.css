@@ -451,11 +451,16 @@ button { font: inherit; cursor: pointer; }
   content: "␣"; color: var(--muted); opacity: .5;
 }
 .cell.blank .glyph { color: transparent; }
+.cell.control .glyph {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: clamp(.55rem, calc(var(--cell-size) * 0.22), .85rem);
+  font-weight: 600; color: var(--muted); letter-spacing: -.02em;
+}
 .cell.empty { background: repeating-linear-gradient(45deg, transparent, transparent 5px,
   color-mix(in srgb, var(--border) 30%, transparent) 5px, color-mix(in srgb, var(--border) 30%, transparent) 6px);
   border-left: 1px solid color-mix(in srgb, var(--border) 30%, transparent); }
-/* empty cells (unassigned / surrogate / control) get a group-tinted hatch
-   instead of the neutral one, so those "area attributes" stay visible too */
+/* empty cells (unassigned / surrogate) get a group-tinted hatch instead of
+   the neutral one, so those "area attributes" stay visible too */
 .cell.empty[data-group] { background: repeating-linear-gradient(45deg, transparent, transparent 5px,
   color-mix(in srgb, var(--grp-color, var(--border)) 32%, transparent) 5px,
   color-mix(in srgb, var(--grp-color, var(--border)) 32%, transparent) 6px); }
@@ -539,6 +544,10 @@ button { font: inherit; cursor: pointer; }
 .modal-glyph {
   flex: 1; text-align: center; font-size: clamp(3.5rem, 22vw, 6rem); line-height: 1.1;
   min-width: 0; word-break: break-all; font-family: var(--font-glyph);
+}
+.modal-glyph.control {
+  font-size: clamp(1.6rem, 8vw, 2.4rem); font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-weight: 700; color: var(--muted); letter-spacing: -.02em;
 }
 .modal-name { text-align: center; font-weight: 600; margin-bottom: 16px; min-height: 1.4em; }
 .modal-info { margin: 0; }

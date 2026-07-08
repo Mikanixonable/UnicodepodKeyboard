@@ -100,7 +100,7 @@ function isAssigned(cp) {
 // Cells that get no interactive glyph at all.
 function isEmptyCell(cp) {
   const c = categoryOf(cp);
-  return c === 'Cn' || c === 'Cs' || c === 'Cc';
+  return c === 'Cn' || c === 'Cs';
 }
 
 // Assigned + something meaningful to insert.
@@ -443,10 +443,52 @@ const CJK_UNIFIED = [[0x3400, 0x4DBF], [0x4E00, 0x9FFF],
 const CJK_COMPAT = [[0xF900, 0xFAFF], [0x2F800, 0x2FA1F]];
 const inAny = (cp, ranges) => ranges.some(([s, e]) => cp >= s && cp <= e);
 
+// C0 (0x00-0x1F, 0x7F) and C1 (0x80-0x9F) control codes have no
+// General_Category name (UnicodeData.txt leaves them "<control>"); these are
+// the standard ISO/IEC 6429 short mnemonics and full aliases instead.
+const CONTROL_NAMES = {
+  0x00: ['NUL', 'NULL'], 0x01: ['SOH', 'START OF HEADING'], 0x02: ['STX', 'START OF TEXT'],
+  0x03: ['ETX', 'END OF TEXT'], 0x04: ['EOT', 'END OF TRANSMISSION'], 0x05: ['ENQ', 'ENQUIRY'],
+  0x06: ['ACK', 'ACKNOWLEDGE'], 0x07: ['BEL', 'BELL'], 0x08: ['BS', 'BACKSPACE'],
+  0x09: ['HT', 'CHARACTER TABULATION'], 0x0A: ['LF', 'LINE FEED'], 0x0B: ['VT', 'LINE TABULATION'],
+  0x0C: ['FF', 'FORM FEED'], 0x0D: ['CR', 'CARRIAGE RETURN'], 0x0E: ['SO', 'SHIFT OUT'],
+  0x0F: ['SI', 'SHIFT IN'], 0x10: ['DLE', 'DATA LINK ESCAPE'], 0x11: ['DC1', 'DEVICE CONTROL ONE'],
+  0x12: ['DC2', 'DEVICE CONTROL TWO'], 0x13: ['DC3', 'DEVICE CONTROL THREE'],
+  0x14: ['DC4', 'DEVICE CONTROL FOUR'], 0x15: ['NAK', 'NEGATIVE ACKNOWLEDGE'],
+  0x16: ['SYN', 'SYNCHRONOUS IDLE'], 0x17: ['ETB', 'END OF TRANSMISSION BLOCK'],
+  0x18: ['CAN', 'CANCEL'], 0x19: ['EM', 'END OF MEDIUM'], 0x1A: ['SUB', 'SUBSTITUTE'],
+  0x1B: ['ESC', 'ESCAPE'], 0x1C: ['FS', 'INFORMATION SEPARATOR FOUR'],
+  0x1D: ['GS', 'INFORMATION SEPARATOR THREE'], 0x1E: ['RS', 'INFORMATION SEPARATOR TWO'],
+  0x1F: ['US', 'INFORMATION SEPARATOR ONE'], 0x7F: ['DEL', 'DELETE'],
+  0x80: ['PAD', 'PADDING CHARACTER'], 0x81: ['HOP', 'HIGH OCTET PRESET'],
+  0x82: ['BPH', 'BREAK PERMITTED HERE'], 0x83: ['NBH', 'NO BREAK HERE'],
+  0x84: ['IND', 'INDEX'], 0x85: ['NEL', 'NEXT LINE'], 0x86: ['SSA', 'START OF SELECTED AREA'],
+  0x87: ['ESA', 'END OF SELECTED AREA'], 0x88: ['HTS', 'CHARACTER TABULATION SET'],
+  0x89: ['HTJ', 'CHARACTER TABULATION WITH JUSTIFICATION'], 0x8A: ['VTS', 'LINE TABULATION SET'],
+  0x8B: ['PLD', 'PARTIAL LINE FORWARD'], 0x8C: ['PLU', 'PARTIAL LINE BACKWARD'],
+  0x8D: ['RI', 'REVERSE LINE FEED'], 0x8E: ['SS2', 'SINGLE SHIFT TWO'],
+  0x8F: ['SS3', 'SINGLE SHIFT THREE'], 0x90: ['DCS', 'DEVICE CONTROL STRING'],
+  0x91: ['PU1', 'PRIVATE USE ONE'], 0x92: ['PU2', 'PRIVATE USE TWO'],
+  0x93: ['STS', 'SET TRANSMIT STATE'], 0x94: ['CCH', 'CANCEL CHARACTER'],
+  0x95: ['MW', 'MESSAGE WAITING'], 0x96: ['SPA', 'START OF GUARDED AREA'],
+  0x97: ['EPA', 'END OF GUARDED AREA'], 0x98: ['SOS', 'START OF STRING'],
+  0x99: ['SGCI', 'SINGLE GRAPHIC CHARACTER INTRODUCER'], 0x9A: ['SCI', 'SINGLE CHARACTER INTRODUCER'],
+  0x9B: ['CSI', 'CONTROL SEQUENCE INTRODUCER'], 0x9C: ['ST', 'STRING TERMINATOR'],
+  0x9D: ['OSC', 'OPERATING SYSTEM COMMAND'], 0x9E: ['PM', 'PRIVACY MESSAGE'],
+  0x9F: ['APC', 'APPLICATION PROGRAM COMMAND'],
+};
+
+function controlAbbr(cp) {
+  const entry = CONTROL_NAMES[cp];
+  return entry ? entry[0] : null;
+}
+
 function algorithmicName(cp) {
   if (inAny(cp, CJK_UNIFIED)) return `CJK UNIFIED IDEOGRAPH-${hex(cp)}`;
   if (inAny(cp, CJK_COMPAT)) return `CJK COMPATIBILITY IDEOGRAPH-${hex(cp)}`;
   if (cp >= 0xAC00 && cp <= 0xD7A3) return hangulName(cp);
+  const control = CONTROL_NAMES[cp];
+  if (control) return `<control-${hex(cp)}> (${control[1]})`;
   return null;
 }
 
@@ -502,7 +544,7 @@ window.App.Data = {
   SEGMENTS, COLS, ROW_H, segRows, totalRows,
   loadCore, ensureNames, ensureDescriptions,
   hex, inScope, categoryOf, isAssigned, isEmptyCell, isInsertable, isBlankGlyph,
-  isCombining, glyphFor, blockOf, getBlocks, planeOf, planeInfo, rowToBaseCp, cpToRow,
+  isCombining, glyphFor, controlAbbr, blockOf, getBlocks, planeOf, planeInfo, rowToBaseCp, cpToRow,
   neighborInsertable, algorithmicName, nameSync, getName, descriptionSync, getDescription, categoryDesc,
   utf8Bytes, utf16Units,
   categoryGroup, groupOf, dominantGroupForRange, blockGroup, blockLabel,

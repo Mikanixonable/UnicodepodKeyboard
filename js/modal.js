@@ -142,7 +142,9 @@ class DetailModal {
 
   render() {
     const cp = this.cp;
-    this.glyphEl.textContent = D.glyphFor(cp);
+    const controlAbbr = D.controlAbbr(cp);
+    this.glyphEl.textContent = controlAbbr || D.glyphFor(cp);
+    this.glyphEl.classList.toggle('control', !!controlAbbr);
     const cat = D.categoryOf(cp);
     const block = D.blockOf(cp);
     const blockText = block
