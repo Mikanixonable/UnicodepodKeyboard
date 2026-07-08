@@ -68,6 +68,7 @@ class BlockHeader {
     document.addEventListener('keydown', (e) => {
       if (this.open && e.key === 'Escape') { this.close(); this.btn.focus(); }
     });
+    window.addEventListener('resize', () => { if (this.open) this.fitPop(); });
   }
 
   legendHtml() {
@@ -146,9 +147,18 @@ class BlockHeader {
     this.btn.setAttribute('aria-expanded', 'true');
     this.search.value = '';
     this.filter('');
+    this.fitPop();
     this.search.focus();
     const active = this.listEl.querySelector('.active');
     if (active) active.scrollIntoView({ block: 'center' });
+  }
+
+  // Cap the popup height to the viewport space actually available below it,
+  // so opening it never pushes the page down (which reads as a layout jump).
+  fitPop() {
+    const top = this.pop.getBoundingClientRect().top;
+    const available = window.innerHeight - top - 12;
+    this.pop.style.maxHeight = `${Math.max(160, Math.min(available, window.innerHeight * 0.7))}px`;
   }
 
   close() {
