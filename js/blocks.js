@@ -82,13 +82,15 @@ function buildBlockList(listEl, mode, onItemClick) {
     li.className = 'block-item';
     li.dataset.cp = b.s;
     li.dataset.group = group;
-    li.title = `U+${D.hex(b.s)}–U+${D.hex(b.e)}`;
+    const range = `U+${D.hex(b.s)}–U+${D.hex(b.e)}`;
+    li.title = range;
     li.innerHTML =
       `<div class="block-item-head">` +
         `<span class="swatch" data-group="${group}"></span>` +
         `<span class="block-item-name">` +
           `<span class="name-ja">${escapeHtml(ja || en)}</span>` +
           (ja ? `<span class="name-en">${escapeHtml(en)}</span>` : '') +
+          `<span class="block-item-range">${range}</span>` +
         `</span>` +
       `</div>` +
       (samples.length
