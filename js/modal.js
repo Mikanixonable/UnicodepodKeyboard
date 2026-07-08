@@ -4,6 +4,20 @@
 
 const D = window.App.Data;
 
+const HASH_RE = /(?:^#|&)cp=([0-9A-Fa-f]+)/;
+
+function cpFromHash() {
+  const m = HASH_RE.exec(location.hash);
+  if (!m) return null;
+  const cp = parseInt(m[1], 16);
+  return Number.isFinite(cp) ? cp : null;
+}
+
+function setHash(cp) {
+  const hash = cp == null ? '' : `#cp=${cp.toString(16).toUpperCase()}`;
+  history.replaceState(null, '', location.pathname + location.search + hash);
+}
+
 class DetailModal {
   constructor(root, { onInsert, onReveal, onAddMenu, onCopyDone, mylists }) {
     this.root = root;
@@ -63,18 +77,30 @@ class DetailModal {
       else if (e.key === 'ArrowRight') this.step(1);
     });
     this.fav.subscribe(() => { if (!this.root.hidden) this.updateFav(); });
+
+    window.addEventListener('hashchange', () => {
+      const cp = cpFromHash();
+      if (cp != null && D.inScope(cp) && cp !== this.cp) this.open(cp, false);
+      else if (cp == null && !this.root.hidden) this.close(false);
+    });
+    const initial = cpFromHash();
+    if (initial != null && D.inScope(initial)) this.open(initial, false);
   }
 
-  async open(cp) {
+  async open(cp, updateUrl = true) {
     this.cp = cp;
     this.root.hidden = false;
     this.render();
     this.nameEl.textContent = '読み込み中…';
+    if (updateUrl) setHash(cp);
     const name = await D.getName(cp);
     if (this.cp === cp) this.nameEl.textContent = name || '(名称なし)';
   }
 
-  close() { this.root.hidden = true; }
+  close(updateUrl = true) {
+    this.root.hidden = true;
+    if (updateUrl) setHash(null);
+  }
 
   async copy() {
     if (this.cp == null) return;
