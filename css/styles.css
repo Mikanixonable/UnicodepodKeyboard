@@ -10,6 +10,7 @@
   --accent-ink: #0b1220;
   --fav: #ffcf5c;
   --danger: #f87171;
+  --app-width: 1240px;
   --gutter: 4.8rem;
   --cell-size: 58px;
   --grid-cols: var(--gutter) repeat(16, var(--cell-size));
@@ -64,6 +65,7 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
+  align-items: center;
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
@@ -82,6 +84,8 @@ button { font: inherit; cursor: pointer; }
 /* ---------- output ---------- */
 .output-area {
   flex: none;
+  align-self: center;
+  width: min(100%, var(--app-width));
   padding: 12px clamp(10px, 3vw, 20px);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
@@ -124,6 +128,10 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------- input area ---------- */
 .input-area { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.input-area {
+  align-self: center;
+  width: min(100%, var(--app-width));
+}
 
 .mode-tabs {
   flex: none; display: flex; align-items: flex-end; gap: 4px;
@@ -188,7 +196,7 @@ button { font: inherit; cursor: pointer; }
 
 .block-pop {
   position: absolute; z-index: 30; top: calc(100% - 4px); left: clamp(10px, 3vw, 20px);
-  width: min(760px, calc(100vw - 24px)); max-height: 70vh; display: flex; flex-direction: column;
+  width: min(760px, calc(100% - 24px)); max-height: 70vh; display: flex; flex-direction: column;
   background: var(--elevated); border: 1px solid var(--border); border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0,0,0,.45); overflow: hidden;
 }
