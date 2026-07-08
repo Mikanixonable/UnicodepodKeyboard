@@ -228,8 +228,9 @@ async function main() {
     openMenu(x, y, items);
   }
 
-  // start names prefetch in the background (non-blocking) for snappy modals
+  // start names/descriptions prefetch in the background (non-blocking) for snappy modals
   D.ensureNames();
+  D.ensureDescriptions();
   $('#loading').remove();
 
   // debug handle (harmless in production; used by tests)
@@ -250,8 +251,9 @@ function distinctCodepoints(str) {
 // Switch the glyph font between the system stack and installed Noto fonts.
 function setupFontToggle() {
   const KEY = 'unicode-app:font:v1';
+  const FONTS = ['system', 'noto', 'extended'];
   const opts = document.querySelectorAll('.font-opt');
-  const cur = () => document.documentElement.dataset.font === 'noto' ? 'noto' : 'system';
+  const cur = () => FONTS.includes(document.documentElement.dataset.font) ? document.documentElement.dataset.font : 'system';
   const apply = (font) => {
     document.documentElement.dataset.font = font;
     try { localStorage.setItem(KEY, font); } catch { /* ignore */ }

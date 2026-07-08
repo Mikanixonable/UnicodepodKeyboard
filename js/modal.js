@@ -94,7 +94,15 @@ class DetailModal {
     this.nameEl.textContent = '読み込み中…';
     if (updateUrl) setHash(cp);
     const name = await D.getName(cp);
-    if (this.cp === cp) this.nameEl.textContent = name || '(名称なし)';
+    if (this.cp !== cp) return;
+    this.nameEl.textContent = name || '(名称なし)';
+    // descriptions.js is prefetched in the background at startup, so this is
+    // usually already resolved; re-render only covers the rare case where the
+    // modal is opened (e.g. via a #cp= link) before that prefetch finishes.
+    if (!D.descriptionSync(cp)) {
+      await D.ensureDescriptions();
+      if (this.cp === cp) this.render();
+    }
   }
 
   close(updateUrl = true) {
@@ -140,15 +148,35 @@ class DetailModal {
     const blockText = block
       ? (D.blockLabel(block.n).ja ? `${D.blockLabel(block.n).ja}（${block.n}）` : block.n)
       : '未割り当て（No Block）';
+    const plane = D.planeOf(cp);
+    const { ja: planeJa, en: planeEn } = D.planeInfo(plane);
+    const planeText = `第${plane}面（Plane ${plane}）：${planeJa}（${planeEn}）`;
+
+    const group = D.groupOf(cp);
+    const { ja: groupJa, en: groupEn } = D.groupLabel(group);
+    const groupText = `<span class="swatch" data-group="${group}"></span>${groupJa} <span class="legend-en">${groupEn}</span>`;
+
+    const era = D.eraOf(cp);
+    const age = D.ageOf(cp);
+    const { ja: eraJa, en: eraEn } = D.eraLabel(era);
+    const eraText = `<span class="swatch" data-group="${era}"></span>${eraJa} <span class="legend-en">${eraEn}${age ? ` ・ Unicode ${age}` : ''}</span>`;
+
+    const desc = D.descriptionSync(cp);
+    const jsHex = cp.toString(16).toUpperCase();
+
     const rows = [
       ['コードポイント', `U+${D.hex(cp)}`],
       ['10進', String(cp)],
-      ['ブロック', blockText],
+      ['ブロック / 面', `${blockText}<br><span class="legend-en">${planeText}</span>`],
       ['分類', `${cat} — ${D.categoryDesc(cat)}`],
+      ['文字の種類', groupText],
+      ['追加時期', eraText],
+      desc ? ['説明', desc] : null,
       ['UTF-8', D.utf8Bytes(cp).join(' ')],
       ['UTF-16', D.utf16Units(cp).join(' ')],
       ['HTML', `&amp;#${cp}; &nbsp; &amp;#x${D.hex(cp)};`],
-    ];
+      ['JavaScript', `0x${jsHex} ・ '\\u{${jsHex}}'`],
+    ].filter(Boolean);
     this.infoEl.innerHTML = rows
       .map(([k, v]) => `<div class="info-row"><dt>${k}</dt><dd>${v}</dd></div>`)
       .join('');

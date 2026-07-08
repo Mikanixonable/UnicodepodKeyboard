@@ -22,6 +22,8 @@ let catRuns = [];         // sorted [start, end, "Cat"]
 let ageRuns = [];         // sorted [start, end, "X.Y"], gaps = unassigned
 let namesMap = null;      // lazy
 let namesPromise = null;
+let descMap = null;       // lazy
+let descPromise = null;
 
 // ---- loading -------------------------------------------------------------
 
@@ -44,6 +46,30 @@ function ensureNames() {
     });
   }
   return namesPromise;
+}
+
+function ensureDescriptions() {
+  if (descMap) return Promise.resolve(descMap);
+  if (!descPromise) {
+    descPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'data/descriptions.js';
+      s.onload = () => { descMap = window.UNICODE_DESCRIPTIONS || {}; resolve(descMap); };
+      s.onerror = () => reject(new Error('data/descriptions.js の読み込みに失敗しました'));
+      document.head.appendChild(s);
+    });
+  }
+  return descPromise;
+}
+
+// Best-effort synchronous description (uses the map only if already loaded).
+function descriptionSync(cp) {
+  return descMap ? (descMap[hex(cp)] || null) : null;
+}
+
+async function getDescription(cp) {
+  const map = await ensureDescriptions();
+  return map[hex(cp)] || null;
 }
 
 // ---- basic helpers -------------------------------------------------------
@@ -114,12 +140,47 @@ function getBlocks() {
   return blocks;
 }
 
+// ---- planes ---------------------------------------------------------------
+
+const PLANE_LABELS = {
+  0: ['基本多言語面', 'Basic Multilingual Plane (BMP)'],
+  1: ['追加多言語面', 'Supplementary Multilingual Plane (SMP)'],
+  2: ['追加漢字面', 'Supplementary Ideographic Plane (SIP)'],
+  3: ['第三漢字面', 'Tertiary Ideographic Plane (TIP)'],
+  14: ['追加特殊用途面', 'Supplementary Special-purpose Plane (SSP)'],
+  15: ['私用面 A', 'Supplementary Private Use Area-A'],
+  16: ['私用面 B', 'Supplementary Private Use Area-B'],
+};
+
+function planeOf(cp) {
+  return cp >>> 16;
+}
+
+function planeInfo(plane) {
+  const [ja, en] = PLANE_LABELS[plane] || ['未割り当て面', 'Unassigned Plane'];
+  return { num: plane, ja, en };
+}
+
 // ---- attribute groups (for color coding) ---------------------------------
 
 // Official Unicode blocks whose content is predominantly emoji/pictographs.
 // General_Category alone can't tell "So (symbol)" apart from "So (emoji)",
 // so this is a name-based override applied after category classification.
 const EMOJI_BLOCK_RE = /Emoticons|Pictographs|Transport and Map/i;
+
+// Display labels for each category group -- single source shared by the
+// legend, block picker, and character detail modal, so wording and icon
+// color always stay in sync wherever a group appears.
+const GROUP_LABELS = {
+  letter: ['文字', 'Letter'], mark: ['記号(結合)', 'Mark'], number: ['数字', 'Number'], punct: ['句読点', 'Punctuation'],
+  symbol: ['記号', 'Symbol'], emoji: ['絵文字', 'Emoji'], separator: ['区切り', 'Separator'], control: ['制御', 'Control'],
+  format: ['書式', 'Format'], surrogate: ['サロゲート', 'Surrogate'], private: ['私用領域', 'Private Use'], unassigned: ['未割り当て', 'Unassigned'],
+};
+
+function groupLabel(key) {
+  const [ja, en] = GROUP_LABELS[key] || [key, key];
+  return { ja, en };
+}
 
 // Collapses a General_Category code down to one of a small set of groups
 // used for color coding, in both the grid and the block picker.
@@ -439,12 +500,13 @@ function utf16Units(cp) {
 window.App = window.App || {};
 window.App.Data = {
   SEGMENTS, COLS, ROW_H, segRows, totalRows,
-  loadCore, ensureNames,
+  loadCore, ensureNames, ensureDescriptions,
   hex, inScope, categoryOf, isAssigned, isEmptyCell, isInsertable, isBlankGlyph,
-  isCombining, glyphFor, blockOf, getBlocks, rowToBaseCp, cpToRow,
-  neighborInsertable, algorithmicName, nameSync, getName, categoryDesc,
+  isCombining, glyphFor, blockOf, getBlocks, planeOf, planeInfo, rowToBaseCp, cpToRow,
+  neighborInsertable, algorithmicName, nameSync, getName, descriptionSync, getDescription, categoryDesc,
   utf8Bytes, utf16Units,
   categoryGroup, groupOf, dominantGroupForRange, blockGroup, blockLabel,
+  GROUP_LABELS, groupLabel,
   ageOf, eraOf, eraLabel, ERAS, dominantEraForRange, groupForMode, blockGroupForMode,
 };
 

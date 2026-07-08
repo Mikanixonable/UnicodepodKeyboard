@@ -4,24 +4,8 @@
 
 const D = window.App.Data;
 
-const GROUP_LABELS = {
-  letter: ['文字', 'Letter'], mark: ['記号(結合)', 'Mark'], number: ['数字', 'Number'], punct: ['句読点', 'Punctuation'],
-  symbol: ['記号', 'Symbol'], emoji: ['絵文字', 'Emoji'], separator: ['区切り', 'Separator'], control: ['制御', 'Control'],
-  format: ['書式', 'Format'], surrogate: ['サロゲート', 'Surrogate'], private: ['私用領域', 'Private Use'], unassigned: ['未割り当て', 'Unassigned'],
-};
-
-const PLANE_LABELS = {
-  0: ['基本多言語面', 'Basic Multilingual Plane (BMP)'],
-  1: ['追加多言語面', 'Supplementary Multilingual Plane (SMP)'],
-  2: ['追加漢字面', 'Supplementary Ideographic Plane (SIP)'],
-  3: ['第三漢字面', 'Tertiary Ideographic Plane (TIP)'],
-  14: ['追加特殊用途面', 'Supplementary Special-purpose Plane (SSP)'],
-  15: ['私用面 A', 'Supplementary Private Use Area-A'],
-  16: ['私用面 B', 'Supplementary Private Use Area-B'],
-};
-
 function planeLabel(p) {
-  const [ja, en] = PLANE_LABELS[p] || ['未割り当て面', 'Unassigned Plane'];
+  const { ja, en } = D.planeInfo(p);
   return `第${p}面（Plane ${p}）: ${ja}（${en}）`;
 }
 
@@ -36,7 +20,7 @@ function legendHtmlFor(mode) {
       .map((e) => `<span class="legend-item"><span class="swatch" data-group="${e.key}"></span>${e.ja} <span class="legend-en">${e.en}</span></span>`)
       .join('');
   }
-  return Object.entries(GROUP_LABELS)
+  return Object.entries(D.GROUP_LABELS)
     .map(([g, [ja, en]]) =>
       `<span class="legend-item"><span class="swatch" data-group="${g}"></span>${ja} <span class="legend-en">${en}</span></span>`)
     .join('');

@@ -13,6 +13,8 @@ which is what makes the app work when opened directly as a local file
   age.js         window.UNICODE_AGE = RLE ranges [[start, end, "6.0"], ...]  Unicode
                  version each codepoint was first assigned in (gaps = unassigned)
   names.js       window.UNICODE_NAMES = { "<hex>": "NAME" }  assigned, non-algorithmic chars only
+  descriptions.js window.UNICODE_DESCRIPTIONS = { "<hex>": "text" }  official NamesList.txt
+                 annotations ("*" notes), sparse -- most codepoints have none
 
 Scope: BMP plus supplementary planes 1-3 (historic scripts, symbols, emoji,
 CJK Ext B-H) and plane 14, each trimmed to its last assigned codepoint
@@ -20,17 +22,19 @@ CJK Ext B-H) and plane 14, each trimmed to its last assigned codepoint
 compatibility ideographs, Hangul syllables) are excluded from names.js; the
 browser derives those names on the fly.
 
-Requires network for Blocks.txt and DerivedAge.txt (Python's unicodedata has
-no block or age API).
+Requires network for Blocks.txt, DerivedAge.txt, and NamesList.txt (Python's
+unicodedata has no block, age, or annotation API).
 """
 import json
 import os
+import re
 import sys
 import unicodedata
 import urllib.request
 
 BLOCKS_URL = "https://www.unicode.org/Public/UCD/latest/ucd/Blocks.txt"
 AGE_URL = "https://www.unicode.org/Public/UCD/latest/ucd/DerivedAge.txt"
+NAMESLIST_URL = "https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt"
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
 # Candidate plane ranges to cover. Each is trimmed down to its last assigned
@@ -142,6 +146,31 @@ def fetch_age():
     return merged
 
 
+def fetch_descriptions():
+    """Official per-character annotations ("\t*" note lines in NamesList.txt),
+    e.g. "displayed with a red color when used in emoji style" for U+2764.
+    Most codepoints have none; this only covers the ones that do."""
+    print("Fetching NamesList.txt ...", file=sys.stderr)
+    with urllib.request.urlopen(NAMESLIST_URL, timeout=30) as r:
+        text = r.read().decode("utf-8")
+    notes_by_cp = {}
+    cur_cp = None
+    for raw in text.splitlines():
+        if not raw or raw[0] == "@":
+            cur_cp = None  # blank line / block-comment line ends the current entry
+            continue
+        if raw[0] != "\t":
+            code, _, _name = raw.partition("\t")
+            if ".." in code or not re.fullmatch(r"[0-9A-Fa-f]{4,6}", code):
+                cur_cp = None
+                continue
+            cur_cp = int(code, 16)
+            continue
+        if raw.startswith("\t*") and cur_cp is not None and in_scope(cur_cp):
+            notes_by_cp.setdefault(cur_cp, []).append(raw[2:].strip())
+    return {"%04X" % cp: "; ".join(notes) for cp, notes in notes_by_cp.items()}
+
+
 def build_categories():
     """Run-length encode General_Category over the scope."""
     runs = []
@@ -181,6 +210,7 @@ def main():
     cats = build_categories()
     age = fetch_age()
     names = build_names()
+    descriptions = fetch_descriptions()
 
     def dump(filename, varname, obj):
         path = os.path.join(OUT_DIR, filename)
@@ -196,6 +226,7 @@ def main():
     dump("categories.js", "UNICODE_CATEGORIES", cats)
     dump("age.js", "UNICODE_AGE", age)
     dump("names.js", "UNICODE_NAMES", names)
+    dump("descriptions.js", "UNICODE_DESCRIPTIONS", descriptions)
     print("done.", file=sys.stderr)
 
 

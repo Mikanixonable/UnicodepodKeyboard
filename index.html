@@ -7,6 +7,10 @@
   <meta name="color-scheme" content="dark light">
   <title>Unicode 入力</title>
   <link rel="stylesheet" href="css/styles.css">
+  <!-- @font-face rules for bundled rare-script fonts (fonts/*.woff2); each
+       has a unicode-range so the browser only downloads it when the "拡張"
+       font mode is active AND a matching glyph is actually rendered. -->
+  <link rel="stylesheet" href="css/fonts-extended.css">
   <!-- apply the saved glyph font before first paint to avoid a flash -->
   <script>try { var f = localStorage.getItem('unicode-app:font:v1'); if (f) document.documentElement.dataset.font = f; } catch (e) { }</script>
 </head>
@@ -21,7 +25,7 @@
     <div class="output-bar">
       <div class="btn-group">
         <button type="button" id="copy-btn" class="btn primary">⧉ コピー</button>
-        <button type="button" id="paste-btn" class="btn" title="貼り付け">📋 貼り付け</button>
+        <button type="button" id="paste-btn" class="btn" title="貼り付け">⧈ 貼り付け</button>
         <button type="button" id="del-btn" class="btn" title="1字削除">⌫ 1字削除</button>
         <button type="button" id="clear-btn" class="btn" title="全削除">✖︎ 全消去</button>
         <button type="button" id="undo-btn" class="btn" title="元に戻す">↶ 元に戻す</button>
@@ -48,6 +52,7 @@
         <span class="font-label">フォント</span>
         <button type="button" class="font-opt" data-font="system">システム</button>
         <button type="button" class="font-opt" data-font="noto">Noto</button>
+        <button type="button" class="font-opt" data-font="extended" title="西夏文字・変体仮名など、希少スクリプト用フォントを同梱（約6MB）">拡張</button>
       </div>
     </div>
 
