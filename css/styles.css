@@ -267,6 +267,16 @@ button {
   color: var(--danger);
 }
 
+/* clips the fake caret (see output.js updateFakeCaret) to the textarea's own
+   box, so scrolling/overflow can never make it poke out above/below the
+   output area -- it also just naturally hugs #output's size, since the
+   mirror/caret are the only other (absolutely positioned, out-of-flow)
+   children. */
+.ta-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
 #output {
   width: 100%;
   resize: vertical;
@@ -653,9 +663,15 @@ button {
   color: var(--text);
 }
 
-.block-search {
+.block-search-wrap {
+  position: relative;
   margin: 8px;
-  padding: 9px 11px;
+}
+
+.block-search {
+  width: 100%;
+  margin: 0;
+  padding: 9px 30px 9px 11px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--panel-2);
@@ -665,6 +681,24 @@ button {
 .block-search:focus {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
+}
+
+.block-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--elevated) 70%, transparent);
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 /* attribute-color legend shown above the palette. Grid (not flex) with an
@@ -1272,6 +1306,12 @@ button {
   padding: 2px 0;
   overflow: hidden;
   position: relative;
+  /* long-press here opens our own context menu (see bindPointer() in
+     grid.js/app.js); without this, mobile browsers show their native
+     text-selection magnifier/handles over the glyph first instead. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .cell .glyph {
@@ -1648,6 +1688,19 @@ button {
   box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
 }
 
+/* Sticky positioning anchor for .modal-close: height:0 so it takes no flow
+   space (doesn't push .modal-nav etc. down), but as a `position: sticky`
+   element it still stays pinned to the top of .modal-box's scrollport while
+   its content scrolls underneath -- the absolutely positioned close button
+   inside hangs outside this 0-height box (nothing clips it) at a fixed
+   corner offset, appearing to float above the content. */
+.modal-close-anchor {
+  position: sticky;
+  top: 0;
+  height: 0;
+  z-index: 5;
+}
+
 .modal-close {
   position: absolute;
   top: 12px;
@@ -1835,6 +1888,27 @@ button {
 
   .mobile-bar-btn:active { transform: translateY(1px); }
 
+  /* Left has 1 button (42px), right has 2 (42px*2 + gap = 92px) -- unequal,
+     which pushed the flex:1 center content off true page-center (it lands
+     centered between the two side groups, not the screen). Reserve equal
+     width on both sides -- flush to their own screen edge -- so the center
+     group's midpoint lands on the actual page center. */
+  .mobile-bar-side {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: calc(42px * 2 + 8px);
+  }
+
+  .mobile-bar-side-left {
+    justify-content: flex-start;
+  }
+
+  .mobile-bar-side-right {
+    justify-content: flex-end;
+  }
+
   /* compact brand (icon+title) + #count share the middle of the bar, stacked
      into two short lines so they fit in the same height as the hamburger/
      block-picker buttons either side. #count itself is moved here from
@@ -1894,6 +1968,162 @@ button {
      screens. */
   .output-bar .btn-label {
     display: none;
+  }
+
+  /* The mylist bulk-action buttons (全て追加/全て削除) are replaced by a
+     single combined ★ button in the top bar instead (see #mobile-mylist-btn
+     / its click handler in app.js, which offers the 追加/削除 choice first),
+     so hide the desktop pair here. Undo/redo are hidden too, swapped for
+     the ↑/↓ caret-line buttons (more useful for a touch keyboard-less
+     workflow) -- this keeps the row at exactly seven buttons
+     (copy/paste/←/→/↑/↓/⌫), still filling the row edge-to-edge as squares. */
+  #output-add-mylist-btn,
+  #output-remove-mylist-btn,
+  #undo-btn,
+  #redo-btn {
+    display: none;
+  }
+
+  .output-bar .btn-group {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .output-bar .btn-group .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+  }
+
+  /* output text shrunk to ~70% */
+  #output {
+    font-size: .8rem;
+  }
+
+  /* Central block-picker modal: use the full site height instead of 70vh,
+     since the legend/list shrinking below gives it much more headroom to
+     actually use. */
+  .block-pop-box {
+    height: min(96vh, 96dvh);
+  }
+
+  /* side-by-side (legend : color-mode toggle) grid columns squeeze the
+     legend into a sliver on a narrow screen (the auto-sized toggle column
+     wins the space fight). Stack them instead so .legend-items gets the
+     modal's full width to wrap across, same fix already applied to the
+     left-menu legend (see .menu-left .attr-legend). */
+  .block-pop-box .block-legend {
+    grid-template-columns: 1fr;
+  }
+
+  /* 4 legend items per row (was a fixed 128px, fitting ~2) at ~80% text
+     size, to save vertical space now that the legend spans full width. */
+  .block-pop-box .legend-item {
+    width: calc(25% - 5px);
+    font-size: .58rem;
+  }
+
+  /* "色分けなし（No coloring）" is a single long item shown instead of the
+     usual group list when color-mode is "none" -- it doesn't fit the
+     4-per-row width above without wrapping, so give it the full row instead
+     (this is the only item ever shown in that mode, so no other columns to
+     share space with). */
+  .block-pop-box .legend-item.legend-none {
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .block-pop-box .legend-label .legend-ja {
+    font-size: .58rem;
+  }
+
+  .block-pop-box .legend-label .legend-en {
+    font-size: .5rem;
+  }
+
+  /* block list: 1 per row (base rule is 4) -- the full row width means text
+     can grow to ~1.3x the previous 2-column sizes instead of staying
+     cramped. */
+  .block-pop-box .block-list {
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  /* 3-column layout: name (ja above en) | code range | sample glyphs.
+     The grid has to live on .block-item itself, not .block-item-head:
+     .block-item-head/.block-item-samples used to be two independent flex
+     boxes (head flex:1, samples flex:none) whose *widths* varied row to
+     row (samples' width depends on how many/which glyphs a block has,
+     shrinking head's share), so even a perfectly consistent inner layout
+     still landed the range column at a different x per row. Unwrapping
+     both .block-item-head and .block-item-name (display:contents; they
+     contribute no box, just expose their children) puts swatch, name-ja,
+     name-en, block-item-range, and block-item-samples all directly on one
+     shared grid with fixed-width range/sample columns, so every row lines
+     up identically -- like tab stops. block-item-fav (the favorite-star
+     badge) is pulled out of flow entirely (position:absolute) since it's
+     only ever shown for a handful of rows and isn't part of this alignment. */
+  .block-pop-box .block-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 5.5rem 4.6rem;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 8px;
+  }
+
+  .block-pop-box .block-item-head,
+  .block-pop-box .block-item-name {
+    display: contents;
+  }
+
+  .block-pop-box .block-item > .block-item-head > .swatch {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .block-pop-box .block-item .name-ja {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: .96rem;
+    line-height: 1.15;
+  }
+
+  .block-pop-box .block-item .name-en {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: .52rem;
+    line-height: 1.15;
+    margin-top: -3px;
+  }
+
+  .block-pop-box .block-item-range {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-size: .47rem;
+  }
+
+  .block-pop-box .block-item-fav {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    margin-left: 0;
+  }
+
+  .block-pop-box .block-item-samples {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+  }
+
+  .block-pop-box .sample-glyph {
+    font-size: .86rem;
   }
 
   /* tabs shrunk ~70% so all four titles stay on one line without wrapping */
@@ -2028,6 +2258,65 @@ button {
     width: min(94vw, 440px);
     max-height: calc(100vh - 24px);
     max-height: calc(100dvh - 24px);
+  }
+
+  /* Sized up from the desktop 32px, then back down through a couple of
+     rounds of feedback (64px -> 51px -> 36px, ~70% each time); circular;
+     reverted to a dark-background/light-text scheme (fixed colors, not the
+     theme variables, so it reads the same regardless of site theme); and
+     pulled in to sit right at the corner (12px offset -> 6px) -- shrinking
+     it that much also stopped it overlapping .nav-next (see modal-glyph's
+     min-height comment for why that pairing is otherwise close). */
+  .modal-close {
+    top: 6px;
+    right: 6px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.12rem;
+    border-radius: 50%;
+    background: #1a1d24;
+    color: #f5f6f8;
+  }
+
+  /* action row: all 5 buttons (including the text-labeled 符号表へ/入力)
+     become equal squares spanning the modal's full width, instead of
+     unequal rectangles (reveal/insert flexed wide, fav fixed at 42px). */
+  .modal-actions {
+    flex-wrap: nowrap;
+  }
+
+  .modal-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    aspect-ratio: 1 / 1;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  .fav-btn {
+    width: auto;
+  }
+
+  /* icon-only buttons (copy/fav/add -- unlike reveal/insert, which have text
+     labels) grow their icon ~1.3x: .8rem (inherited from .modal-actions) and
+     fav-btn's own 1.1rem become 1.04rem/1.43rem. */
+  .modal-actions .copy-btn,
+  .modal-actions .add-btn {
+    font-size: 1.04rem;
+  }
+
+  .modal-actions .fav-btn {
+    font-size: 1.43rem;
+  }
+
+  /* spec rows below the action buttons shrunk to ~80% */
+  .info-row {
+    font-size: .8em;
   }
 }
 

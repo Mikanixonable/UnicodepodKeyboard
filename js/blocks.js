@@ -305,7 +305,10 @@ class BlockHeader {
             <div class="plane-jump"></div>
             <button type="button" class="block-pop-close" aria-label="閉じる">✕</button>
           </div>
-          <input type="text" class="block-search" placeholder="ブロックを検索…" aria-label="ブロック検索">
+          <div class="block-search-wrap">
+            <input type="text" class="block-search" placeholder="ブロックを検索…" aria-label="ブロック検索">
+            <button type="button" class="block-search-clear" aria-label="検索内容を削除" hidden>×</button>
+          </div>
           <div class="block-legend"></div>
           <ul class="block-list" role="listbox"></ul>
         </div>
@@ -332,6 +335,7 @@ class BlockHeader {
     this.planeJumpEl = root.querySelector('.plane-jump');
     this.legendEl = root.querySelector('.block-legend');
     this.search = root.querySelector('.block-search');
+    this.searchClear = root.querySelector('.block-search-clear');
     this.listEl = root.querySelector('.block-list');
     this.jumpForm = jScope.querySelector('.jump');
     this.jumpInput = jScope.querySelector('.jump-input');
@@ -343,7 +347,24 @@ class BlockHeader {
     this.btn.addEventListener('click', () => this.toggle());
     root.querySelector('.block-pop-close').addEventListener('click', () => this.close());
     root.querySelector('.block-pop-backdrop').addEventListener('click', () => this.close());
-    this.search.addEventListener('input', () => this.filter(this.search.value));
+    this.search.addEventListener('input', () => {
+      this.filter(this.search.value);
+      this.searchClear.hidden = !this.search.value;
+    });
+    // Mobile: the virtual keyboard's "Enter"/"Go" key otherwise does nothing
+    // here (it's not inside a <form> that would submit) -- blur so it
+    // actually dismisses the keyboard, matching what users expect Enter to do.
+    this.search.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); this.search.blur(); }
+    });
+    this.searchClear.addEventListener('click', () => {
+      this.search.value = '';
+      this.filter('');
+      this.searchClear.hidden = true;
+      // No this.search.focus() here -- that would pop the virtual keyboard
+      // right back up, same reasoning as maybeFocus() in output.js. The
+      // user tapped a button, not the field itself.
+    });
     this.jumpForm.addEventListener('submit', (e) => { e.preventDefault(); this.jump(); });
     this.jumpInput.addEventListener('input', () => this.jumpInput.classList.remove('invalid'));
     document.addEventListener('keydown', (e) => {
@@ -390,7 +411,7 @@ class BlockHeader {
 
   buildPlaneJump() {
     wirePlaneJump(this.planeJumpEl, this.planeHeaders, {
-      beforeJump: () => { this.search.value = ''; this.filter(''); },
+      beforeJump: () => { this.search.value = ''; this.filter(''); this.searchClear.hidden = true; },
     });
   }
 
@@ -451,7 +472,12 @@ class BlockHeader {
     this.btn.setAttribute('aria-expanded', 'true');
     this.search.value = '';
     this.filter('');
-    this.search.focus();
+    this.searchClear.hidden = true;
+    // Skip on mobile: auto-focusing the search field pops the virtual
+    // keyboard the instant this modal opens, covering most of it before the
+    // user has even seen the block list -- same reasoning as maybeFocus() in
+    // output.js. Desktop keeps the convenience of landing ready-to-type.
+    if (!window.matchMedia('(max-width: 768px)').matches) this.search.focus();
     const active = this.listEl.querySelector('.active');
     if (active) active.scrollIntoView({ block: 'center' });
   }

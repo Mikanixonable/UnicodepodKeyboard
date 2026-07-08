@@ -29,7 +29,9 @@
       root.innerHTML = `
       <div class="modal-backdrop"></div>
       <div class="modal-box" role="dialog" aria-modal="true" aria-label="文字の詳細">
-        <button type="button" class="modal-close" aria-label="閉じる">✕</button>
+        <div class="modal-close-anchor">
+          <button type="button" class="modal-close" aria-label="閉じる">✕</button>
+        </div>
         <div class="modal-nav">
           <button type="button" class="nav-prev" aria-label="前の文字">‹</button>
           <div class="modal-glyph"></div>
@@ -37,7 +39,7 @@
         </div>
         <div class="modal-name"></div>
         <div class="modal-actions">
-          <button type="button" class="btn reveal-btn">符号表へ</button>
+          <button type="button" class="btn reveal-btn">符号表</button>
           <button type="button" class="btn insert-btn">入力</button>
           <button type="button" class="btn copy-btn">⧉</button>
           <button type="button" class="btn fav-btn"></button>

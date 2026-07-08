@@ -58,6 +58,8 @@ async function main() {
   $('#paste-btn').addEventListener('click', () => output.paste());
   $('#caret-left-btn').addEventListener('click', () => output.moveCaret(-1));
   $('#caret-right-btn').addEventListener('click', () => output.moveCaret(1));
+  $('#caret-up-btn').addEventListener('click', () => output.moveCaretLine(-1));
+  $('#caret-down-btn').addEventListener('click', () => output.moveCaretLine(1));
   $('#del-btn').addEventListener('click', () => output.deleteBackward());
   $('#clear-btn').addEventListener('click', () => output.clearAll());
   $('#undo-btn').addEventListener('click', () => output.undo());
@@ -87,6 +89,19 @@ async function main() {
   $('#output-remove-mylist-btn').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     openOutputMyListMenu(r.left, r.bottom + 6, 'remove');
+  });
+
+  // Mobile: the two buttons above are hidden (see .output-bar .btn-group in
+  // the max-width:768px media query) in favor of a single combined ★ button
+  // in the top bar; tapping it offers the 追加/削除 choice first, then
+  // chains into the same per-mylist menu as the desktop buttons.
+  $('#mobile-mylist-btn').addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = r.left, y = r.bottom + 6;
+    openMenu(x, y, [
+      { label: '★＋ 全て追加', onClick: () => openOutputMyListMenu(x, y, 'add') },
+      { label: '★－ 全て削除', onClick: () => openOutputMyListMenu(x, y, 'remove') },
+    ]);
   });
 
   // ---- modal, block header, grid ----------------------------------------

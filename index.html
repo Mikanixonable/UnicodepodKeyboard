@@ -22,7 +22,9 @@
 
   <!-- モバイル用トップバー（狭い画面でのみ表示。左右メニューをドロワーで開く） -->
   <div class="mobile-bar">
-    <button type="button" id="menu-left-toggle" class="mobile-bar-btn" aria-label="設定メニューを開く">☰</button>
+    <div class="mobile-bar-side mobile-bar-side-left">
+      <button type="button" id="menu-left-toggle" class="mobile-bar-btn" aria-label="設定メニューを開く">☰</button>
+    </div>
     <div class="mobile-bar-center">
       <div class="mobile-brand">
         <span class="mobile-brand-icon" aria-hidden="true">U</span>
@@ -30,7 +32,10 @@
       </div>
       <span id="mobile-bar-count-slot" class="mobile-bar-count-slot"></span>
     </div>
-    <button type="button" id="menu-right-toggle" class="mobile-bar-btn" aria-label="ブロック選択を開く">▦</button>
+    <div class="mobile-bar-side mobile-bar-side-right">
+      <button type="button" id="mobile-mylist-btn" class="mobile-bar-btn" aria-label="出力欄の全文字をマイリストへ追加/削除">★</button>
+      <button type="button" id="menu-right-toggle" class="mobile-bar-btn" aria-label="ブロック選択を開く">▦</button>
+    </div>
   </div>
   <div id="drawer-backdrop" class="drawer-backdrop"></div>
 
@@ -64,14 +69,18 @@
       <!-- 出力部 -->
       <section class="output-area" aria-label="出力部">
         <button type="button" id="clear-btn" class="clear-circle-btn" title="全削除">×</button>
-        <textarea id="output" rows="3" placeholder="出力部" spellcheck="false" autocapitalize="off"
-          autocomplete="off"></textarea>
+        <div class="ta-wrap">
+          <textarea id="output" rows="3" placeholder="出力部" spellcheck="false" autocapitalize="off"
+            autocomplete="off"></textarea>
+        </div>
         <div class="output-bar">
           <div class="btn-group">
             <button type="button" id="copy-btn" class="btn" title="コピー"><span class="btn-icon">⧉</span><span class="btn-label">コピー</span></button>
             <button type="button" id="paste-btn" class="btn" title="貼付け"><span class="btn-icon">⧈</span><span class="btn-label">貼付け</span></button>
             <button type="button" id="caret-left-btn" class="btn" title="カーソルを左へ">←</button>
             <button type="button" id="caret-right-btn" class="btn" title="カーソルを右へ">→</button>
+            <button type="button" id="caret-up-btn" class="btn" title="カーソルを上へ">↑</button>
+            <button type="button" id="caret-down-btn" class="btn" title="カーソルを下へ">↓</button>
             <button type="button" id="del-btn" class="btn" title="1字削除">⌫</button>
             <button type="button" id="undo-btn" class="btn" title="元に戻す">↶</button>
             <button type="button" id="redo-btn" class="btn" title="やり直す">↷</button>

@@ -29,9 +29,28 @@ class OutputArea {
     this.history = [this.snapshot()];
     this.hi = 0;
 
-    this.ta.addEventListener('input', () => this.onUserInput());
-    this.ta.addEventListener('blur', () => { this.commit(); this.updateFakeCaret(); });
-    this.ta.addEventListener('focus', () => this.updateFakeCaret());
+    // `typing` tracks an actual native-keyboard session, distinct from
+    // activeElement === ta -- see updateFakeCaret() for why the two can
+    // disagree (iOS's swipe-to-dismiss-keyboard gesture doesn't blur).
+    this.typing = false;
+    this.ta.addEventListener('input', () => {
+      this.onUserInput();
+      this.typing = true;
+      this.caretEl.style.display = 'none';
+      clearTimeout(this.typingIdleTimer);
+      this.typingIdleTimer = setTimeout(() => { this.typing = false; this.updateFakeCaret(); }, 400);
+    });
+    this.ta.addEventListener('focus', () => { this.typing = true; this.updateFakeCaret(); });
+    this.ta.addEventListener('blur', () => {
+      this.commit();
+      clearTimeout(this.typingIdleTimer);
+      this.typing = false;
+      this.updateFakeCaret();
+    });
+    // The textarea can scroll (long text, vertical resize) independently of
+    // any caret-moving operation; updateFakeCaret() already subtracts
+    // ta.scrollLeft/scrollTop; it just needs to actually re-run on scroll.
+    this.ta.addEventListener('scroll', () => this.updateFakeCaret());
     this.updateCount();
     this.setupFakeCaret();
   }
@@ -78,13 +97,17 @@ class OutputArea {
     if (!window.matchMedia('(max-width: 768px)').matches) this.ta.focus();
   }
 
-  // A custom blinking caret, shown only when the textarea isn't actually
-  // focused (mobile: maybeFocus() deliberately skips focus() on programmatic
-  // edits to avoid popping the keyboard, so the browser's native caret never
-  // appears there -- leaving no visual cue for where the next tap will
-  // insert). Positioned with a hidden mirror div that replicates the
-  // textarea's box/font metrics, since a <textarea> can't host child nodes
-  // to measure against directly.
+  // A custom blinking caret, shown whenever there isn't an active native
+  // typing session (mobile: maybeFocus() deliberately skips focus() on
+  // programmatic edits to avoid popping the keyboard, so the browser's
+  // native caret never appears there; and even for genuine typing, iOS's
+  // swipe-to-dismiss-keyboard gesture hides the keyboard/native caret
+  // *without* blurring the textarea, so gating on document.activeElement
+  // alone would leave no cursor visible at all until some other edit
+  // happens -- see the input/focus/blur listeners above for how `typing`
+  // is tracked instead). Positioned with a hidden mirror div that
+  // replicates the textarea's box/font metrics, since a <textarea> can't
+  // host child nodes to measure against directly.
   setupFakeCaret() {
     const wrap = this.ta.parentElement;
     this.mirror = document.createElement('div');
@@ -98,7 +121,7 @@ class OutputArea {
   }
 
   updateFakeCaret() {
-    if (!window.matchMedia('(max-width: 768px)').matches || document.activeElement === this.ta) {
+    if (!window.matchMedia('(max-width: 768px)').matches || this.typing) {
       this.caretEl.style.display = 'none';
       return;
     }
@@ -111,6 +134,8 @@ class OutputArea {
     for (const p of props) this.mirror.style[p] = cs[p];
     this.mirror.style.position = 'absolute';
     this.mirror.style.visibility = 'hidden';
+    this.mirror.style.opacity = '';
+    this.mirror.style.pointerEvents = ''; // clears moveCaretLine()'s temporary 'auto' override
     this.mirror.style.whiteSpace = 'pre-wrap';
     this.mirror.style.wordWrap = 'break-word';
     this.mirror.style.left = `${this.ta.offsetLeft}px`;
@@ -123,10 +148,21 @@ class OutputArea {
     marker.textContent = '​';
     this.mirror.appendChild(marker);
 
-    const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+    const fontSize = parseFloat(cs.fontSize);
+    const lineHeight = parseFloat(cs.lineHeight) || fontSize * 1.2;
+    // Using the full line-height as the caret's height (anchored at the
+    // line box's top edge) made it ~1.4x taller than the actual glyphs and
+    // sitting visibly above them. Splitting the leftover space evenly
+    // above/below (half-leading) still left it looking too high -- glyph
+    // ink sits closer to the line box's bottom (near the baseline) than to
+    // its vertical center, since a font's ascent is taller than its
+    // descent. Push the caret down by the full leftover space instead
+    // (bottom-aligned within the line box) to actually bracket the glyph.
+    const caretHeight = fontSize * 1.15;
+    const leading = lineHeight - caretHeight;
     this.caretEl.style.left = `${this.ta.offsetLeft + marker.offsetLeft - this.ta.scrollLeft}px`;
-    this.caretEl.style.top = `${this.ta.offsetTop + marker.offsetTop - this.ta.scrollTop}px`;
-    this.caretEl.style.height = `${lineHeight}px`;
+    this.caretEl.style.top = `${this.ta.offsetTop + marker.offsetTop + leading - this.ta.scrollTop}px`;
+    this.caretEl.style.height = `${caretHeight}px`;
     this.caretEl.style.display = 'block';
   }
 
@@ -184,6 +220,81 @@ class OutputArea {
     }
     this.maybeFocus();
     this.updateFakeCaret();
+  }
+
+  // Move the caret up (-1) or down (+1) one *visual* line (i.e. accounting
+  // for wrapped long lines, not just explicit \n), keeping roughly the same
+  // horizontal position -- like a text editor's up/down arrow keys, which a
+  // plain <textarea> doesn't expose an API for directly. Reuses the same
+  // hidden mirror div as the fake caret (see updateFakeCaret), since a real
+  // rendered copy of the text is what lets us hit-test a pixel position
+  // back to a character offset via caretPositionFromPoint/caretRangeFromPoint.
+  moveCaretLine(dir) {
+    const cs = getComputedStyle(this.ta);
+    const props = [
+      'boxSizing', 'width', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+      'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+      'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing',
+    ];
+    for (const p of props) this.mirror.style[p] = cs[p];
+    // Unlike updateFakeCaret's own use of the mirror (absolute + hidden +
+    // pointer-events:none via the .ta-mirror class -- fine, since nothing
+    // needs to hit-test it there), this needs
+    // caretRangeFromPoint/caretPositionFromPoint to actually find text in
+    // it, which means overriding both of those:
+    // - pointer-events:none excludes an element from hit-testing entirely
+    //   (that's the .ta-mirror class default), so it must go to 'auto' here.
+    // - even then, a live <textarea> always wins hit-testing at its own
+    //   screen position over any sibling laid on top of it, regardless of
+    //   position/z-index (a browser quirk with native form controls) -- so
+    //   the real textarea has to be made visibility:hidden (paint-only,
+    //   doesn't affect layout/focus) for this one synchronous measurement,
+    //   restored immediately after.
+    const taRect = this.ta.getBoundingClientRect();
+    const prevVisibility = this.ta.style.visibility;
+    this.ta.style.visibility = 'hidden';
+    this.mirror.style.position = 'fixed';
+    this.mirror.style.visibility = 'visible';
+    this.mirror.style.opacity = '0';
+    this.mirror.style.pointerEvents = 'auto';
+    this.mirror.style.whiteSpace = 'pre-wrap';
+    this.mirror.style.wordWrap = 'break-word';
+    this.mirror.style.left = `${taRect.left - this.ta.scrollLeft}px`;
+    this.mirror.style.top = `${taRect.top - this.ta.scrollTop}px`;
+    this.mirror.style.height = 'auto';
+
+    this.mirror.textContent = this.ta.value;
+    const textNode = this.mirror.firstChild;
+    if (textNode) {
+      const pos = this.ta.selectionStart;
+      const posRange = document.createRange();
+      posRange.setStart(textNode, 0);
+      posRange.setEnd(textNode, pos);
+      const rects = posRange.getClientRects();
+      const rect = rects[rects.length - 1] || this.mirror.getBoundingClientRect();
+
+      const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+      const targetX = rect.right;
+      const targetY = rect.top + lineHeight * dir + lineHeight / 2;
+
+      let hit = null;
+      if (document.caretPositionFromPoint) {
+        const r = document.caretPositionFromPoint(targetX, targetY);
+        if (r) hit = { node: r.offsetNode, offset: r.offset };
+      } else if (document.caretRangeFromPoint) {
+        const r = document.caretRangeFromPoint(targetX, targetY);
+        if (r) hit = { node: r.startContainer, offset: r.startOffset };
+      }
+      if (hit && this.mirror.contains(hit.node)) {
+        const hitRange = document.createRange();
+        hitRange.setStart(textNode, 0);
+        hitRange.setEnd(hit.node, hit.offset);
+        this.ta.setSelectionRange(hitRange.toString().length, hitRange.toString().length);
+      } // else: no line in that direction -- no-op, like moveCaret()'s edges
+    }
+    this.ta.style.visibility = prevVisibility;
+    this.maybeFocus();
+    this.updateFakeCaret(); // restores the mirror's normal absolute/hidden/pointer-events state
   }
 
   clearAll() {
