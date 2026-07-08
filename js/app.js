@@ -72,7 +72,7 @@ async function main() {
   const grid = new Grid($('#grid'), {
     onInsert: insert,
     onDetail: (cp) => modal.open(cp),
-    onAddMenu: (cp) => openMyListMenu(cp, window.innerWidth / 2, window.innerHeight / 2),
+    onAddMenu: (cp, x, y) => openMyListMenu(cp, x, y),
     onReveal: (cp, flash) => revealInAll && revealInAll(cp, flash),
     mylists,
     onTopCpChange: (cp) => header.setTopCp(cp),
@@ -154,9 +154,9 @@ async function main() {
   drawHist();
   renderMyListControls();
 
-  bindCharBoard(currentBoard, insert, (cp) => [
+  bindCharBoard(currentBoard, insert, (cp, x, y) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
-    { label: 'マイリストへ追加…', onClick: () => openMyListMenu(cp, window.innerWidth / 2, window.innerHeight / 2) },
+    { label: 'マイリストへ追加…', onClick: () => openMyListMenu(cp, x, y) },
   ]);
   bindCharBoard(favBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
@@ -164,9 +164,9 @@ async function main() {
     { label: '次へ移動 →', onClick: () => mylists.move(cp, 1) },
     { label: `${mylists.activeList.icon} ${mylists.activeList.name}から外す`, onClick: () => mylists.remove(cp) },
   ]);
-  bindCharBoard(histBoard, insert, (cp) => [
+  bindCharBoard(histBoard, insert, (cp, x, y) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
-    { label: 'マイリストへ追加…', onClick: () => openMyListMenu(cp, window.innerWidth / 2, window.innerHeight / 2) },
+    { label: 'マイリストへ追加…', onClick: () => openMyListMenu(cp, x, y) },
     { label: '履歴から削除', onClick: () => history.remove(cp) },
   ]);
 
@@ -281,7 +281,7 @@ function bindCharBoard(root, insert, menuItems) {
     suppress = false; xy = { x: e.clientX, y: e.clientY };
     if (e.pointerType !== 'mouse') {
       clearTimeout(timer);
-      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(cp)); }, 450);
+      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(cp, xy.x, xy.y)); }, 450);
     }
   });
   root.addEventListener('pointermove', (e) => {
@@ -296,7 +296,7 @@ function bindCharBoard(root, insert, menuItems) {
   root.addEventListener('contextmenu', (e) => {
     const cp = cpOf(e.target); if (cp == null) return;
     e.preventDefault();
-    openMenu(e.clientX, e.clientY, menuItems(cp));
+    openMenu(e.clientX, e.clientY, menuItems(cp, e.clientX, e.clientY));
   });
 }
 

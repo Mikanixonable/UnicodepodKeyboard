@@ -27,7 +27,7 @@ class DetailModal {
         <div class="modal-actions">
           <button type="button" class="btn insert-btn">＋ 入力</button>
           <button type="button" class="btn add-btn">他のマイリストへ追加</button>
-          <button type="button" class="btn reveal-btn">全Unicodeで表示</button>
+          <button type="button" class="btn reveal-btn">符号表で表示</button>
           <button type="button" class="btn fav-btn"></button>
         </div>
       </div>`;

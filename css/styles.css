@@ -397,7 +397,7 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------- context menu ---------- */
 .ctx-menu {
-  position: fixed; z-index: 60; min-width: 180px; padding: 6px;
+  position: fixed; z-index: 90; min-width: 180px; padding: 6px;
   background: var(--elevated); border: 1px solid var(--border); border-radius: 10px;
   box-shadow: 0 12px 40px rgba(0,0,0,.5);
 }

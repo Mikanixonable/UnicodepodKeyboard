@@ -134,10 +134,10 @@ class Grid {
     return btn ? Number(btn.dataset.cp) : null;
   }
 
-  menuItems(cp) {
+  menuItems(cp, x, y) {
     const label = this.fav.activeLabel || 'マイリスト';
     return [
-      { label: 'マイリストへ追加…', onClick: () => this.onAddMenu && this.onAddMenu(cp) },
+      { label: 'マイリストへ追加…', onClick: () => this.onAddMenu && this.onAddMenu(cp, x, y) },
       {
         label: this.fav.has(cp) ? `${label}から外す` : `${label}に追加`,
         onClick: () => this.fav.toggle(cp),
@@ -159,7 +159,7 @@ class Grid {
         clearTimer();
         timer = setTimeout(() => {
           suppress = true;
-          openMenu(downXY.x, downXY.y, this.menuItems(cp));
+          openMenu(downXY.x, downXY.y, this.menuItems(cp, downXY.x, downXY.y));
         }, 450);
       }
     });
@@ -183,7 +183,7 @@ class Grid {
       const cp = this.cellCp(e.target);
       if (cp == null) return;
       e.preventDefault();
-      openMenu(e.clientX, e.clientY, this.menuItems(cp));
+      openMenu(e.clientX, e.clientY, this.menuItems(cp, e.clientX, e.clientY));
     });
   }
 
