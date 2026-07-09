@@ -10,6 +10,7 @@ const { DetailModal } = window.App.Modal;
 const { openMenu } = window.App.Menu;
 const { ColorMode } = window.App.ColorMode;
 const { BlockFavorites } = window.App.BlockFavorites;
+const { UnicodeArt } = window.App.Art;
 const UrlState = window.App.UrlState;
 
 async function main() {
@@ -35,6 +36,7 @@ async function main() {
   const history = new History();
   const colorMode = new ColorMode();
   const blockFavorites = new BlockFavorites();
+  const art = new UnicodeArt();
   const currentBoard = $('#current-board');
   let revealInAll = null;
 
@@ -243,6 +245,26 @@ async function main() {
     if (history.list.length) history.clear();
   });
 
+  // ---- Unicode Art (saved output-area snapshots, shown as tiles) --------
+  const artBoard = $('#art-board');
+  const drawArt = () => renderArtBoard(artBoard, art.items, {
+    onInsert: (text) => { output.insert(text); for (const cp of distinctCodepoints(text)) history.record(cp); },
+    onDelete: (id) => art.remove(id),
+    onShare: async (text) => {
+      const ok = await copyTextToClipboard(buildArtShareUrl(text));
+      showToast(ok ? '共有用リンクをコピーしました' : 'リンクのコピーに失敗しました');
+    },
+  });
+  art.subscribe(drawArt);
+  drawArt();
+
+  $('#save-art-btn').addEventListener('click', () => {
+    const text = output.ta.value;
+    if (!text) { showToast('出力部が空です'); return; }
+    art.add(text);
+    showToast('作品を保存しました');
+  });
+
   // ---- font toggle (system glyphs vs installed Noto fonts) --------------
   setupFontToggle();
 
@@ -254,7 +276,7 @@ async function main() {
   const tabs = document.querySelectorAll('.mode-tab');
   const panels = {
     all: $('#panel-all'), current: $('#panel-current'),
-    history: $('#panel-history'), fav: $('#panel-fav'),
+    history: $('#panel-history'), fav: $('#panel-fav'), art: $('#panel-art'),
   };
   let currentMode = 'all';
   const setMode = (mode, updateUrl = true) => {
@@ -272,6 +294,20 @@ async function main() {
     if (mode && mode !== currentMode && panels[mode]) setMode(mode, false);
   });
   setMode(UrlState.get('mode') || 'all');
+
+  // Shared Unicode Art link (see buildArtShareUrl): load the shared text
+  // into the output area and land on the Art tab, then strip the `art`
+  // param so a later reload/back-navigation doesn't re-insert it again.
+  // It's shown, not auto-saved -- the recipient decides whether to keep it
+  // via the normal "＋ 現在の内容を保存" button, same as any other output.
+  const sharedArt = UrlState.get('art');
+  if (sharedArt) {
+    output.insert(sharedArt);
+    for (const cp of distinctCodepoints(sharedArt)) history.record(cp);
+    setMode('art');
+    UrlState.set('art', null);
+  }
+
   revealInAll = (cp, flash = true) => {
     setMode('all');
     modal.close();
@@ -398,6 +434,74 @@ function renderCharBoard(el, list, mylists, colorMode, emptyHtml) {
     wrap.appendChild(b);
   }
   el.replaceChildren(wrap);
+}
+
+// Unicode Art tiles: each is a saved whole-string snapshot of the output
+// area (not per-codepoint like the other boards), so it gets its own
+// render+bind rather than reusing renderCharBoard/bindCharBoard. Tapping the
+// tile body inserts the saved text at the caret; the visible delete button
+// (always shown, not hover-only, so it stays reachable on touch) removes it.
+function renderArtBoard(el, items, { onInsert, onDelete, onShare }) {
+  if (!items.length) {
+    el.innerHTML = '<p class="fav-empty">保存された作品はまだありません。<br>出力部に文字を入力し、「＋ 現在の内容を保存」を押してください。</p>';
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'art-grid';
+  for (const work of items) {
+    const tile = document.createElement('div');
+    tile.className = 'art-tile';
+    tile.innerHTML =
+      `<button type="button" class="art-tile-share" aria-label="共有用リンクをコピー" title="共有用リンクをコピー">🔗</button>` +
+      `<button type="button" class="art-tile-delete" aria-label="削除">×</button>` +
+      `<div class="art-tile-text">${escapeHtml(work.text)}</div>`;
+    tile.querySelector('.art-tile-text').addEventListener('click', () => onInsert(work.text));
+    tile.querySelector('.art-tile-delete').addEventListener('click', (e) => {
+      e.stopPropagation();
+      onDelete(work.id);
+    });
+    tile.querySelector('.art-tile-share').addEventListener('click', (e) => {
+      e.stopPropagation();
+      onShare(work.text);
+    });
+    wrap.appendChild(tile);
+  }
+  el.replaceChildren(wrap);
+}
+
+// Builds a self-contained shareable URL: #mode=art&art=<text>, so opening it
+// lands directly on the Unicode Art tab with the shared text ready to view
+// (see the "art" URL param handling in main()). URLSearchParams handles the
+// percent-encoding (including astral/surrogate-pair characters) itself.
+function buildArtShareUrl(text) {
+  const params = new URLSearchParams();
+  params.set('mode', 'art');
+  params.set('art', text);
+  return `${location.origin}${location.pathname}${location.search}#${params.toString()}`;
+}
+
+// Same copy-with-fallback approach as OutputArea.copy() (Clipboard API,
+// falling back to a hidden textarea + execCommand for browsers/contexts
+// without clipboard permission).
+async function copyTextToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 // Wire tap-to-insert + long-press/right-click menu on a char keyboard.

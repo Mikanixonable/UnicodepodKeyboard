@@ -98,6 +98,7 @@
           <button type="button" class="mode-tab" data-mode="current" role="tab">入力内容</button>
           <button type="button" class="mode-tab" data-mode="history" role="tab">入力履歴</button>
           <button type="button" class="mode-tab" data-mode="fav" role="tab">マイリスト</button>
+          <button type="button" class="mode-tab" data-mode="art" role="tab">Unicode Art</button>
         </div>
 
         <div id="panel-all" class="panel">
@@ -122,6 +123,14 @@
 
         <div id="panel-fav" class="panel" hidden>
           <div id="fav-board" class="fav-board"></div>
+        </div>
+
+        <div id="panel-art" class="panel" hidden>
+          <div class="board-bar">
+            <span class="board-hint">出力部の内容を作品として保存できます</span>
+            <button type="button" id="save-art-btn" class="btn small">＋ 現在の内容を保存</button>
+          </div>
+          <div id="art-board" class="art-board"></div>
         </div>
       </section>
     </div>
@@ -157,6 +166,7 @@
   <script src="js/output.js" defer></script>
   <script src="js/favorites.js" defer></script>
   <script src="js/history.js" defer></script>
+  <script src="js/art.js" defer></script>
   <script src="js/grid.js" defer></script>
   <script src="js/blocks.js" defer></script>
   <script src="js/modal.js" defer></script>
