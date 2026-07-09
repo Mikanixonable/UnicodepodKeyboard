@@ -1621,6 +1621,35 @@ button {
 }
 
 /* ---------- Unicode Art (saved output-area snapshots, as tiles) --------- */
+.art-subtabs {
+  flex: none;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.art-subtab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+.art-subtab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.art-subpanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .art-board {
   flex: 1;
   min-height: 0;
@@ -1634,19 +1663,41 @@ button {
   gap: 10px;
 }
 
+/* Whole tile is the tap target (see bindArtBoard in app.js: tap inserts,
+   long-press/right-click opens a menu with rename/share/mylist/delete --
+   same interaction as every other board in the app, so no corner buttons
+   are needed here). */
 .art-tile {
-  position: relative;
   min-height: 90px;
+  padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--panel-2);
   overflow: hidden;
+  cursor: pointer;
+  /* long-press here opens the menu (see bindArtBoard in app.js); without
+     this, mobile browsers show their native text-selection magnifier/
+     handles over the tile's text first instead -- same fix as .cell. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.art-tile:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.art-tile-title {
+  margin-bottom: 4px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .art-tile-text {
-  height: 100%;
-  padding: 10px 56px 10px 10px;
-  cursor: pointer;
   font-family: var(--font-glyph);
   font-size: 1.1rem;
   line-height: 1.4;
@@ -1656,47 +1707,6 @@ button {
   -webkit-line-clamp: 4;
   line-clamp: 4;
   -webkit-box-orient: vertical;
-}
-
-.art-tile-text:hover {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-
-.art-tile-delete,
-.art-tile-share {
-  position: absolute;
-  top: 6px;
-  z-index: 1;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--elevated) 70%, transparent);
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.art-tile-delete {
-  right: 6px;
-}
-
-.art-tile-share {
-  right: 32px;
-  font-size: .8rem;
-}
-
-.art-tile-delete:hover {
-  background: color-mix(in srgb, var(--danger) 25%, transparent);
-  color: var(--danger);
-}
-
-.art-tile-share:hover {
-  background: color-mix(in srgb, var(--accent) 25%, transparent);
-  color: var(--accent);
 }
 
 /* ---------- context menu ---------- */

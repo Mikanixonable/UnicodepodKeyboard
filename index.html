@@ -24,6 +24,7 @@
   <div class="mobile-bar">
     <div class="mobile-bar-side mobile-bar-side-left">
       <button type="button" id="menu-left-toggle" class="mobile-bar-btn" aria-label="設定メニューを開く">☰</button>
+      <button type="button" id="mobile-undo-redo-btn" class="mobile-bar-btn" aria-label="元に戻す/やり直す">↺</button>
     </div>
     <div class="mobile-bar-center">
       <div class="mobile-brand">
@@ -127,10 +128,20 @@
 
         <div id="panel-art" class="panel" hidden>
           <div class="board-bar">
-            <span class="board-hint">出力部の内容を作品として保存できます</span>
-            <button type="button" id="save-art-btn" class="btn small">＋ 現在の内容を保存</button>
+            <button type="button" id="save-art-btn" class="btn small">＋ 現在の出力部を保存</button>
           </div>
-          <div id="art-board" class="art-board"></div>
+          <div class="art-subtabs" role="tablist">
+            <button type="button" class="art-subtab active" data-artmode="all" role="tab">全て</button>
+            <button type="button" class="art-subtab" data-artmode="fav" role="tab">お気に入り</button>
+            <button type="button" class="art-subtab" data-artmode="mylist" role="tab">マイリスト</button>
+          </div>
+          <div id="art-subpanel-all" class="art-subpanel">
+            <div id="art-board" class="art-board"></div>
+          </div>
+          <div id="art-subpanel-fav" class="art-subpanel" hidden>
+            <div id="art-fav-board" class="art-board"></div>
+          </div>
+          <div id="art-subpanel-mylist" class="art-subpanel" hidden></div>
         </div>
       </section>
     </div>
@@ -167,6 +178,7 @@
   <script src="js/favorites.js" defer></script>
   <script src="js/history.js" defer></script>
   <script src="js/art.js" defer></script>
+  <script src="js/artlists.js" defer></script>
   <script src="js/grid.js" defer></script>
   <script src="js/blocks.js" defer></script>
   <script src="js/modal.js" defer></script>

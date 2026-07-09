@@ -11,6 +11,7 @@ const { openMenu } = window.App.Menu;
 const { ColorMode } = window.App.ColorMode;
 const { BlockFavorites } = window.App.BlockFavorites;
 const { UnicodeArt } = window.App.Art;
+const { ArtLists } = window.App.ArtLists;
 const UrlState = window.App.UrlState;
 
 async function main() {
@@ -37,6 +38,7 @@ async function main() {
   const colorMode = new ColorMode();
   const blockFavorites = new BlockFavorites();
   const art = new UnicodeArt();
+  const artLists = new ArtLists();
   const currentBoard = $('#current-board');
   let revealInAll = null;
 
@@ -103,6 +105,17 @@ async function main() {
     openMenu(x, y, [
       { label: '★＋ 全て追加', onClick: () => openOutputMyListMenu(x, y, 'add') },
       { label: '★－ 全て削除', onClick: () => openOutputMyListMenu(x, y, 'remove') },
+    ]);
+  });
+
+  // Mobile: undo/redo are likewise hidden from .output-bar (see the
+  // max-width:768px media query) in favor of one combined ↺ button in the
+  // top bar, offering the choice first -- same pattern as ★ above.
+  $('#mobile-undo-redo-btn').addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    openMenu(r.left, r.bottom + 6, [
+      { label: '↶ 元に戻す', onClick: () => output.undo() },
+      { label: '↷ やり直す', onClick: () => output.redo() },
     ]);
   });
 
@@ -246,17 +259,153 @@ async function main() {
   });
 
   // ---- Unicode Art (saved output-area snapshots, shown as tiles) --------
+  function insertArt(id) {
+    const work = art.items.find((w) => w.id === id);
+    if (!work) return;
+    output.insert(work.text);
+    for (const cp of distinctCodepoints(work.text)) history.record(cp);
+  }
+
+  function renameArt(work) {
+    const name = window.prompt('題名を入力してください（空欄で無題）', work.title || '');
+    if (name === null) return;
+    art.rename(work.id, name.trim());
+  }
+
+  // Shared by every Unicode Art tile across all three sub-tabs (全て/お気に
+  // 入り/マイリスト): rename, share, per-list add/remove (uses artLists --
+  // a separate store from the character mylists, since these are different
+  // features with different record types), and delete.
+  function artMenuItems(id) {
+    const work = art.items.find((w) => w.id === id);
+    if (!work) return [];
+    const items = [
+      { label: '✎ 名前を変更', onClick: () => renameArt(work) },
+      {
+        label: '🔗 共有用リンクをコピー',
+        onClick: async () => {
+          const ok = await copyTextToClipboard(buildArtShareUrl(work.text));
+          showToast(ok ? '共有用リンクをコピーしました' : 'リンクのコピーに失敗しました');
+        },
+      },
+    ];
+    for (const list of artLists.lists) {
+      const has = artLists.hasIn(list.id, id);
+      items.push({
+        label: `${list.icon} ${list.name}${has ? 'から外す' : 'に追加'}`,
+        onClick: () => artLists.toggleIn(list.id, id),
+      });
+    }
+    items.push({ label: '削除', onClick: () => art.remove(id) });
+    return items;
+  }
+
   const artBoard = $('#art-board');
-  const drawArt = () => renderArtBoard(artBoard, art.items, {
-    onInsert: (text) => { output.insert(text); for (const cp of distinctCodepoints(text)) history.record(cp); },
-    onDelete: (id) => art.remove(id),
-    onShare: async (text) => {
-      const ok = await copyTextToClipboard(buildArtShareUrl(text));
-      showToast(ok ? '共有用リンクをコピーしました' : 'リンクのコピーに失敗しました');
-    },
+  const drawArt = () => renderArtBoard(artBoard, art.items,
+    '保存された作品はまだありません。<br>出力部に文字を入力し、「＋ 現在の内容を保存」を押してください。');
+  bindArtBoard(artBoard, insertArt, artMenuItems);
+
+  // お気に入りサブタブ: artLists の組み込み既定リストのみを見る（マイリスト
+  // サブタブの、ユーザーが作成する複数リストとは別枠）。
+  const artFavBoard = $('#art-fav-board');
+  const drawArtFav = () => {
+    const favList = artLists.findList(artLists.defaultListId);
+    const items = favList ? art.items.filter((w) => favList.set.has(w.id)) : [];
+    renderArtBoard(artFavBoard, items,
+      'お気に入りの作品はまだありません。<br>作品を長押し（または右クリック）して「★ お気に入りに追加」してください。');
+  };
+  bindArtBoard(artFavBoard, insertArt, artMenuItems);
+
+  // マイリストサブタブ: 文字のマイリストと同じ UI パターン（リスト選択 + 作成/
+  // 名前変更/削除）を、artLists 用に複製。
+  const artMylistPanel = $('#art-subpanel-mylist');
+  artMylistPanel.innerHTML = `
+    <div class="mylist-toolbar">
+      <label class="mylist-picker">
+        <span class="mylist-label">マイリスト</span>
+        <select id="art-mylist-select" class="mylist-select"></select>
+      </label>
+      <div class="mylist-actions">
+        <button type="button" id="art-mylist-add" class="btn small">＋ 作成</button>
+        <button type="button" id="art-mylist-rename" class="btn small">名前変更</button>
+        <button type="button" id="art-mylist-delete" class="btn small danger">削除</button>
+      </div>
+    </div>
+    <div class="mylist-status">
+      <span id="art-mylist-status"></span>
+    </div>
+    <div id="art-mylist-board" class="art-board"></div>`;
+
+  const artMylistSelect = $('#art-mylist-select');
+  const artMylistAddBtn = $('#art-mylist-add');
+  const artMylistRenameBtn = $('#art-mylist-rename');
+  const artMylistDeleteBtn = $('#art-mylist-delete');
+  const artMylistStatus = $('#art-mylist-status');
+  const artMylistBoard = $('#art-mylist-board');
+
+  function renderArtMyListControls() {
+    artMylistSelect.innerHTML = artLists.lists.map((list) => {
+      const label = `${list.icon} ${list.name}`;
+      return `<option value="${list.id}">${escapeHtml(label)}</option>`;
+    }).join('');
+    artMylistSelect.value = artLists.activeId;
+    const active = artLists.activeList;
+    artMylistStatus.textContent = `${active.icon} ${active.name} ・ ${active.items.length} 件`;
+    artMylistDeleteBtn.disabled = !artLists.canDeleteActive();
+    artMylistDeleteBtn.title = artLists.canDeleteActive() ? `${active.name} を削除` : 'お気に入りは削除できません';
+    artMylistRenameBtn.disabled = active.builtIn;
+    artMylistRenameBtn.title = active.builtIn ? 'お気に入りは名前を変更できません' : `${active.name} の名前を変更`;
+  }
+
+  const drawArtMylist = () => {
+    const active = artLists.activeList;
+    const items = active ? art.items.filter((w) => active.set.has(w.id)) : [];
+    renderArtBoard(artMylistBoard, items,
+      `${active ? active.name : 'マイリスト'} はまだありません。<br>作品を長押し（または右クリック）してリストに追加してください。`);
+  };
+  bindArtBoard(artMylistBoard, insertArt, artMenuItems);
+
+  artMylistSelect.addEventListener('change', () => { artLists.setActive(artMylistSelect.value); });
+  artMylistAddBtn.addEventListener('click', () => {
+    const suggested = artLists.lists.some((list) => list.name === 'マイリスト 2')
+      ? `マイリスト ${artLists.lists.length}`
+      : 'マイリスト 2';
+    const name = window.prompt('新しいマイリスト名を入力してください', suggested);
+    if (!name) return;
+    artLists.createList(name);
   });
-  art.subscribe(drawArt);
+  artMylistRenameBtn.addEventListener('click', () => {
+    const active = artLists.activeList;
+    if (!active || active.builtIn) return;
+    const name = window.prompt('新しい名前を入力してください', active.name);
+    if (!name) return;
+    artLists.renameList(active.id, name);
+  });
+  artMylistDeleteBtn.addEventListener('click', () => {
+    const active = artLists.activeList;
+    if (!active || !artLists.canDeleteActive()) return;
+    if (!window.confirm(`「${active.name}」を削除しますか？`)) return;
+    artLists.removeList(active.id);
+  });
+
+  artLists.subscribe(() => { renderArtMyListControls(); drawArtMylist(); drawArtFav(); });
+  renderArtMyListControls();
+
+  art.subscribe(() => { drawArt(); drawArtFav(); drawArtMylist(); });
   drawArt();
+  drawArtFav();
+  drawArtMylist();
+
+  // Unicode Art タブ内のサブタブ（全て/お気に入り/マイリスト）
+  const artSubtabs = document.querySelectorAll('.art-subtab');
+  const artSubpanels = {
+    all: $('#art-subpanel-all'), fav: $('#art-subpanel-fav'), mylist: $('#art-subpanel-mylist'),
+  };
+  artSubtabs.forEach((t) => t.addEventListener('click', () => {
+    const mode = t.dataset.artmode;
+    artSubtabs.forEach((x) => x.classList.toggle('active', x === t));
+    for (const key in artSubpanels) artSubpanels[key].hidden = key !== mode;
+  }));
 
   $('#save-art-btn').addEventListener('click', () => {
     const text = output.ta.value;
@@ -299,7 +448,7 @@ async function main() {
   // into the output area and land on the Art tab, then strip the `art`
   // param so a later reload/back-navigation doesn't re-insert it again.
   // It's shown, not auto-saved -- the recipient decides whether to keep it
-  // via the normal "＋ 現在の内容を保存" button, same as any other output.
+  // via the normal "＋ 現在の出力部を保存" button, same as any other output.
   const sharedArt = UrlState.get('art');
   if (sharedArt) {
     output.insert(sharedArt);
@@ -438,12 +587,13 @@ function renderCharBoard(el, list, mylists, colorMode, emptyHtml) {
 
 // Unicode Art tiles: each is a saved whole-string snapshot of the output
 // area (not per-codepoint like the other boards), so it gets its own
-// render+bind rather than reusing renderCharBoard/bindCharBoard. Tapping the
-// tile body inserts the saved text at the caret; the visible delete button
-// (always shown, not hover-only, so it stays reachable on touch) removes it.
-function renderArtBoard(el, items, { onInsert, onDelete, onShare }) {
+// render/bind rather than reusing renderCharBoard/bindCharBoard -- but the
+// *interaction* (tap to insert, long-press/right-click for a menu of
+// secondary actions) matches every other board in the app for consistency,
+// rather than a scattering of small corner buttons.
+function renderArtBoard(el, items, emptyHtml) {
   if (!items.length) {
-    el.innerHTML = '<p class="fav-empty">保存された作品はまだありません。<br>出力部に文字を入力し、「＋ 現在の内容を保存」を押してください。</p>';
+    el.innerHTML = `<p class="fav-empty">${emptyHtml}</p>`;
     return;
   }
   const wrap = document.createElement('div');
@@ -451,22 +601,43 @@ function renderArtBoard(el, items, { onInsert, onDelete, onShare }) {
   for (const work of items) {
     const tile = document.createElement('div');
     tile.className = 'art-tile';
+    tile.dataset.artId = work.id;
     tile.innerHTML =
-      `<button type="button" class="art-tile-share" aria-label="共有用リンクをコピー" title="共有用リンクをコピー">🔗</button>` +
-      `<button type="button" class="art-tile-delete" aria-label="削除">×</button>` +
+      (work.title ? `<div class="art-tile-title">${escapeHtml(work.title)}</div>` : '') +
       `<div class="art-tile-text">${escapeHtml(work.text)}</div>`;
-    tile.querySelector('.art-tile-text').addEventListener('click', () => onInsert(work.text));
-    tile.querySelector('.art-tile-delete').addEventListener('click', (e) => {
-      e.stopPropagation();
-      onDelete(work.id);
-    });
-    tile.querySelector('.art-tile-share').addEventListener('click', (e) => {
-      e.stopPropagation();
-      onShare(work.text);
-    });
     wrap.appendChild(tile);
   }
   el.replaceChildren(wrap);
+}
+
+// Same long-press-vs-tap pattern as bindCharBoard, keyed by data-art-id
+// instead of data-cp.
+function bindArtBoard(root, insert, menuItems) {
+  let timer = null, suppress = false, xy = null;
+  const idOf = (t) => { const el = t.closest('.art-tile[data-art-id]'); return el ? el.dataset.artId : null; };
+
+  root.addEventListener('pointerdown', (e) => {
+    const id = idOf(e.target); if (id == null) return;
+    suppress = false; xy = { x: e.clientX, y: e.clientY };
+    if (e.pointerType !== 'mouse') {
+      clearTimeout(timer);
+      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(id, xy.x, xy.y)); }, 450);
+    }
+  });
+  root.addEventListener('pointermove', (e) => {
+    if (timer && xy && Math.hypot(e.clientX - xy.x, e.clientY - xy.y) > 10) clearTimeout(timer);
+  });
+  root.addEventListener('pointerup', () => clearTimeout(timer));
+  root.addEventListener('click', (e) => {
+    const id = idOf(e.target); if (id == null) return;
+    if (suppress) { suppress = false; return; }
+    insert(id);
+  });
+  root.addEventListener('contextmenu', (e) => {
+    const id = idOf(e.target); if (id == null) return;
+    e.preventDefault();
+    openMenu(e.clientX, e.clientY, menuItems(id, e.clientX, e.clientY));
+  });
 }
 
 // Builds a self-contained shareable URL: #mode=art&art=<text>, so opening it

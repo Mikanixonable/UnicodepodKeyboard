@@ -29,17 +29,27 @@ class UnicodeArt {
   }
 
   // Newest first, so a freshly saved piece appears at the top of the tile grid.
-  add(text) {
+  add(text, title = '') {
     if (!text) return null;
     const work = {
       id: `art-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       text,
+      title: title || '',
       createdAt: Date.now(),
     };
     this.items.unshift(work);
     this.save();
     this.emit();
     return work;
+  }
+
+  rename(id, title) {
+    const work = this.items.find((w) => w.id === id);
+    if (!work) return false;
+    work.title = title || '';
+    this.save();
+    this.emit();
+    return true;
   }
 
   remove(id) {
