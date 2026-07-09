@@ -1621,33 +1621,24 @@ button {
 }
 
 /* ---------- Unicode Art (saved output-area snapshots, as tiles) --------- */
-.art-subtabs {
-  flex: none;
-  display: flex;
-  border-bottom: 1px solid var(--border);
-}
-
-.art-subtab {
-  flex: 1;
-  padding: 8px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--muted);
+/* Matches .btn.small's padding (5px, not .mylist-select's usual 7px) so the
+   view dropdown sits at the same height as the ＋作成/名前変更/削除/保存
+   buttons sharing its row. */
+#panel-art .mylist-select {
+  padding: 5px 10px;
   font-size: .8rem;
-}
-
-.art-subtab.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-  font-weight: 600;
-}
-
-.art-subpanel {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+  line-height: 1;
+  /* native <select> chrome enforces its own minimum height regardless of
+     padding/line-height on some platforms; appearance:none hands full box
+     control back to us so it can actually match the buttons' height. */
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) center, calc(100% - 11px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 26px;
 }
 
 .art-board {

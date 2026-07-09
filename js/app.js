@@ -300,112 +300,84 @@ async function main() {
     return items;
   }
 
+  // Single dropdown (全て + every artLists list, お気に入り included since
+  // it's just artLists' built-in first entry) replaces separate sub-tabs --
+  // selecting a list also makes it artLists.activeId, so create/rename/
+  // delete always act on whatever's currently shown.
+  const ART_ALL_VIEW = 'all';
+  let artView = ART_ALL_VIEW;
+
   const artBoard = $('#art-board');
-  const drawArt = () => renderArtBoard(artBoard, art.items,
-    '保存された作品はまだありません。<br>出力部に文字を入力し、「＋ 現在の内容を保存」を押してください。');
-  bindArtBoard(artBoard, insertArt, artMenuItems);
-
-  // お気に入りサブタブ: artLists の組み込み既定リストのみを見る（マイリスト
-  // サブタブの、ユーザーが作成する複数リストとは別枠）。
-  const artFavBoard = $('#art-fav-board');
-  const drawArtFav = () => {
-    const favList = artLists.findList(artLists.defaultListId);
-    const items = favList ? art.items.filter((w) => favList.set.has(w.id)) : [];
-    renderArtBoard(artFavBoard, items,
-      'お気に入りの作品はまだありません。<br>作品を長押し（または右クリック）して「★ お気に入りに追加」してください。');
-  };
-  bindArtBoard(artFavBoard, insertArt, artMenuItems);
-
-  // マイリストサブタブ: 文字のマイリストと同じ UI パターン（リスト選択 + 作成/
-  // 名前変更/削除）を、artLists 用に複製。
-  const artMylistPanel = $('#art-subpanel-mylist');
-  artMylistPanel.innerHTML = `
-    <div class="mylist-toolbar">
-      <label class="mylist-picker">
-        <span class="mylist-label">マイリスト</span>
-        <select id="art-mylist-select" class="mylist-select"></select>
-      </label>
-      <div class="mylist-actions">
-        <button type="button" id="art-mylist-add" class="btn small">＋ 作成</button>
-        <button type="button" id="art-mylist-rename" class="btn small">名前変更</button>
-        <button type="button" id="art-mylist-delete" class="btn small danger">削除</button>
-      </div>
-    </div>
-    <div class="mylist-status">
-      <span id="art-mylist-status"></span>
-    </div>
-    <div id="art-mylist-board" class="art-board"></div>`;
-
-  const artMylistSelect = $('#art-mylist-select');
+  const artViewSelect = $('#art-view-select');
   const artMylistAddBtn = $('#art-mylist-add');
   const artMylistRenameBtn = $('#art-mylist-rename');
   const artMylistDeleteBtn = $('#art-mylist-delete');
-  const artMylistStatus = $('#art-mylist-status');
-  const artMylistBoard = $('#art-mylist-board');
 
-  function renderArtMyListControls() {
-    artMylistSelect.innerHTML = artLists.lists.map((list) => {
-      const label = `${list.icon} ${list.name}`;
-      return `<option value="${list.id}">${escapeHtml(label)}</option>`;
-    }).join('');
-    artMylistSelect.value = artLists.activeId;
-    const active = artLists.activeList;
-    artMylistStatus.textContent = `${active.icon} ${active.name} ・ ${active.items.length} 件`;
-    artMylistDeleteBtn.disabled = !artLists.canDeleteActive();
-    artMylistDeleteBtn.title = artLists.canDeleteActive() ? `${active.name} を削除` : 'お気に入りは削除できません';
-    artMylistRenameBtn.disabled = active.builtIn;
-    artMylistRenameBtn.title = active.builtIn ? 'お気に入りは名前を変更できません' : `${active.name} の名前を変更`;
+  function renderArtViewSelect() {
+    const options = [`<option value="${ART_ALL_VIEW}">全て</option>`].concat(
+      artLists.lists.map((list) => `<option value="${list.id}">${escapeHtml(`${list.icon} ${list.name}`)}</option>`)
+    );
+    artViewSelect.innerHTML = options.join('');
+    artViewSelect.value = artView;
+    const list = artView === ART_ALL_VIEW ? null : artLists.findList(artView);
+    const locked = !list || list.builtIn; // 全て・お気に入り (built-in) can't be renamed/deleted
+    artMylistRenameBtn.disabled = locked;
+    artMylistRenameBtn.title = locked ? '名前を変更できません' : `${list.name} の名前を変更`;
+    artMylistDeleteBtn.disabled = locked;
+    artMylistDeleteBtn.title = locked ? '削除できません' : `${list.name} を削除`;
   }
 
-  const drawArtMylist = () => {
-    const active = artLists.activeList;
-    const items = active ? art.items.filter((w) => active.set.has(w.id)) : [];
-    renderArtBoard(artMylistBoard, items,
-      `${active ? active.name : 'マイリスト'} はまだありません。<br>作品を長押し（または右クリック）してリストに追加してください。`);
-  };
-  bindArtBoard(artMylistBoard, insertArt, artMenuItems);
+  function drawArtBoard() {
+    if (artView === ART_ALL_VIEW) {
+      renderArtBoard(artBoard, art.items,
+        '保存された作品はまだありません。<br>「＋ 現在の出力部を保存」を押してください。');
+      return;
+    }
+    const list = artLists.findList(artView);
+    const items = list ? art.items.filter((w) => list.set.has(w.id)) : [];
+    renderArtBoard(artBoard, items,
+      `${list ? list.name : 'マイリスト'} はまだありません。<br>作品を長押し（または右クリック）して追加してください。`);
+  }
+  bindArtBoard(artBoard, insertArt, artMenuItems);
 
-  artMylistSelect.addEventListener('change', () => { artLists.setActive(artMylistSelect.value); });
+  artViewSelect.addEventListener('change', () => {
+    artView = artViewSelect.value;
+    if (artView !== ART_ALL_VIEW) artLists.setActive(artView);
+    renderArtViewSelect();
+    drawArtBoard();
+  });
   artMylistAddBtn.addEventListener('click', () => {
     const suggested = artLists.lists.some((list) => list.name === 'マイリスト 2')
       ? `マイリスト ${artLists.lists.length}`
       : 'マイリスト 2';
     const name = window.prompt('新しいマイリスト名を入力してください', suggested);
     if (!name) return;
-    artLists.createList(name);
+    const list = artLists.createList(name);
+    artView = list.id;
+    renderArtViewSelect();
+    drawArtBoard();
   });
   artMylistRenameBtn.addEventListener('click', () => {
-    const active = artLists.activeList;
-    if (!active || active.builtIn) return;
-    const name = window.prompt('新しい名前を入力してください', active.name);
+    const list = artView === ART_ALL_VIEW ? null : artLists.findList(artView);
+    if (!list || list.builtIn) return;
+    const name = window.prompt('新しい名前を入力してください', list.name);
     if (!name) return;
-    artLists.renameList(active.id, name);
+    artLists.renameList(list.id, name);
   });
   artMylistDeleteBtn.addEventListener('click', () => {
-    const active = artLists.activeList;
-    if (!active || !artLists.canDeleteActive()) return;
-    if (!window.confirm(`「${active.name}」を削除しますか？`)) return;
-    artLists.removeList(active.id);
+    const list = artView === ART_ALL_VIEW ? null : artLists.findList(artView);
+    if (!list || list.builtIn) return;
+    if (!window.confirm(`「${list.name}」を削除しますか？`)) return;
+    artLists.removeList(list.id);
+    artView = ART_ALL_VIEW;
+    renderArtViewSelect();
+    drawArtBoard();
   });
 
-  artLists.subscribe(() => { renderArtMyListControls(); drawArtMylist(); drawArtFav(); });
-  renderArtMyListControls();
-
-  art.subscribe(() => { drawArt(); drawArtFav(); drawArtMylist(); });
-  drawArt();
-  drawArtFav();
-  drawArtMylist();
-
-  // Unicode Art タブ内のサブタブ（全て/お気に入り/マイリスト）
-  const artSubtabs = document.querySelectorAll('.art-subtab');
-  const artSubpanels = {
-    all: $('#art-subpanel-all'), fav: $('#art-subpanel-fav'), mylist: $('#art-subpanel-mylist'),
-  };
-  artSubtabs.forEach((t) => t.addEventListener('click', () => {
-    const mode = t.dataset.artmode;
-    artSubtabs.forEach((x) => x.classList.toggle('active', x === t));
-    for (const key in artSubpanels) artSubpanels[key].hidden = key !== mode;
-  }));
+  artLists.subscribe(() => { renderArtViewSelect(); drawArtBoard(); });
+  art.subscribe(drawArtBoard);
+  renderArtViewSelect();
+  drawArtBoard();
 
   $('#save-art-btn').addEventListener('click', () => {
     const text = output.ta.value;

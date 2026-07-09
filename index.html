@@ -128,20 +128,15 @@
 
         <div id="panel-art" class="panel" hidden>
           <div class="board-bar">
+            <div class="mylist-picker">
+              <select id="art-view-select" class="mylist-select"></select>
+              <button type="button" id="art-mylist-add" class="btn small">＋ 作成</button>
+              <button type="button" id="art-mylist-rename" class="btn small">名前変更</button>
+              <button type="button" id="art-mylist-delete" class="btn small danger">削除</button>
+            </div>
             <button type="button" id="save-art-btn" class="btn small">＋ 現在の出力部を保存</button>
           </div>
-          <div class="art-subtabs" role="tablist">
-            <button type="button" class="art-subtab active" data-artmode="all" role="tab">全て</button>
-            <button type="button" class="art-subtab" data-artmode="fav" role="tab">お気に入り</button>
-            <button type="button" class="art-subtab" data-artmode="mylist" role="tab">マイリスト</button>
-          </div>
-          <div id="art-subpanel-all" class="art-subpanel">
-            <div id="art-board" class="art-board"></div>
-          </div>
-          <div id="art-subpanel-fav" class="art-subpanel" hidden>
-            <div id="art-fav-board" class="art-board"></div>
-          </div>
-          <div id="art-subpanel-mylist" class="art-subpanel" hidden></div>
+          <div id="art-board" class="art-board"></div>
         </div>
       </section>
     </div>
