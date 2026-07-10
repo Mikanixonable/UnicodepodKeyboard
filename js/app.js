@@ -167,7 +167,6 @@ async function main() {
   favPanel.innerHTML = `
     <div class="mylist-toolbar">
       <label class="mylist-picker">
-        <span class="mylist-label">マイリスト</span>
         <select id="mylist-select" class="mylist-select"></select>
       </label>
       <div class="mylist-actions">
@@ -214,9 +213,7 @@ async function main() {
   history.subscribe(drawHist);
   mylistSelect.addEventListener('change', () => { mylists.setActive(mylistSelect.value); });
   mylistAddBtn.addEventListener('click', () => {
-    const suggested = mylists.lists.some((list) => list.name === 'マイリスト 2')
-      ? `マイリスト ${mylists.lists.length}`
-      : 'マイリスト 2';
+    const suggested = `マイリスト ${mylists.lists.length}`
     const name = window.prompt('新しいマイリスト名を入力してください', suggested);
     if (!name) return;
     mylists.createList(name);
