@@ -128,6 +128,11 @@
 
 * {
   box-sizing: border-box;
+  /* Disables the browser's own native tap-flash overlay (separate from any
+     :active/.pressed CSS we control) -- otherwise, on the virtualized
+     符号表 grid, a quick flash can still appear on whatever cell ends up
+     under a touch point once scrolling swaps the underlying cells out. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 [hidden] {
@@ -422,7 +427,8 @@ button {
 }
 
 .font-opt,
-.colormode-opt {
+.colormode-opt,
+.fav-highlight-opt {
   padding: 5px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -432,7 +438,8 @@ button {
 }
 
 .font-opt.active,
-.colormode-opt.active {
+.colormode-opt.active,
+.fav-highlight-opt.active {
   background: var(--accent);
   color: var(--accent-ink);
   border-color: transparent;

@@ -9,7 +9,7 @@ const BUFFER = 6; // extra rows above/below viewport
 const SCROLL_KEY = 'unicode-app:scroll-cp:v1';
 
 class Grid {
-  constructor(root, { onInsert, onDetail, onAddMenu, onReveal, mylists, colorMode, onTopCpChange }) {
+  constructor(root, { onInsert, onDetail, onAddMenu, onReveal, mylists, colorMode, favHighlight, onTopCpChange }) {
     this.root = root;
     this.onInsert = onInsert;
     this.onDetail = onDetail;
@@ -17,6 +17,7 @@ class Grid {
     this.onReveal = onReveal;
     this.fav = mylists;
     this.colorMode = colorMode;
+    this.favHighlight = favHighlight;
     this.onTopCpChange = onTopCpChange;
     this.rowH = D.ROW_H;
     this.cols = D.COLS;
@@ -197,7 +198,7 @@ class Grid {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'cell';
-    if (this.fav.has(cp)) b.classList.add('fav');
+    if (this.favHighlight.get() && this.fav.has(cp)) b.classList.add('fav');
     const controlAbbr = D.controlAbbr(cp);
     if (controlAbbr) b.classList.add('control');
     else if (D.isBlankGlyph(cp)) b.classList.add('blank');
@@ -258,8 +259,15 @@ class Grid {
     });
 
     this.rowsEl.addEventListener('pointermove', (e) => {
-      if (timer && downXY && Math.hypot(e.clientX - downXY.x, e.clientY - downXY.y) > 10)
+      if (downXY && Math.hypot(e.clientX - downXY.x, e.clientY - downXY.y) > 10) {
         clearTimer();
+        // A drag this size means the touch turned into a scroll, not a tap
+        // -- clear the pressed feedback right away instead of waiting for a
+        // 'scroll' event, which only fires once scrollTop has actually
+        // changed (a few pixels of initial finger movement otherwise leaves
+        // the original cell looking pressed while already dragging).
+        clearPressed();
+      }
     });
 
     this.rowsEl.addEventListener('pointerup', () => { clearTimer(); clearPressed(); });

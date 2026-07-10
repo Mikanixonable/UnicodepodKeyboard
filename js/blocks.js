@@ -210,12 +210,25 @@ function openBlockFavMenu(b, x, y, blockFavorites) {
 
 // Renders "第N面" shortcut buttons and wires them to scroll their list to
 // that plane's header. Shared by the modal (which also clears its search
-// box first) and the sidebar's "全て" tab.
-function wirePlaneJump(container, planeHeaders, { beforeJump } = {}) {
-  container.innerHTML = planeHeaders
+// box first) and the sidebar's "全て" tab. `extraButtons` (an array of
+// {label, title, onClick}) render before the plane buttons in the same row
+// -- used by the sidebar for its 現在の位置/絵文字 shortcuts.
+function wirePlaneJump(container, planeHeaders, { beforeJump, extraButtons = [] } = {}) {
+  const extraHtml = extraButtons
+    .map((b, i) => `<button type="button" class="plane-jump-btn" data-extra="${i}" title="${escapeHtml(b.title || b.label)}">${b.label}</button>`)
+    .join('');
+  const planeHtml = planeHeaders
     .map(({ plane }) => `<button type="button" class="plane-jump-btn" data-plane="${plane}" title="${escapeHtml(planeLabel(plane))}">第${plane}面</button>`)
     .join('');
-  for (const btn of container.children) {
+  container.innerHTML = extraHtml + planeHtml;
+  for (const btn of container.querySelectorAll('[data-extra]')) {
+    const i = Number(btn.dataset.extra);
+    btn.addEventListener('click', () => {
+      if (beforeJump) beforeJump();
+      extraButtons[i].onClick();
+    });
+  }
+  for (const btn of container.querySelectorAll('[data-plane]')) {
     btn.addEventListener('click', () => {
       const plane = Number(btn.dataset.plane);
       const target = planeHeaders.find((h) => h.plane === plane);
@@ -237,6 +250,7 @@ class BlockSidebar {
     this.colorMode = colorMode;
     this.blockFavorites = blockFavorites;
     this.tab = 'all';
+    this.currentCp = null;
     root.innerHTML = `
       <div class="block-sidebar-tabs" role="tablist">
         <button type="button" class="block-sidebar-tab active" data-tab="all" role="tab">全て</button>
@@ -277,7 +291,35 @@ class BlockSidebar {
       onContextMenu: (b, x, y) => openBlockFavMenu(b, x, y, this.blockFavorites),
     });
     this.allItems = items;
-    wirePlaneJump(this.planeJumpEl, planeHeaders);
+    wirePlaneJump(this.planeJumpEl, planeHeaders, {
+      extraButtons: [
+        { label: '現在地', title: '現在表示中のブロックへ', onClick: () => this.scrollToCurrentBlock() },
+        { label: '😀 絵文字', title: '絵文字ブロックへ', onClick: () => this.scrollToEmojiBlock() },
+      ],
+    });
+  }
+
+  // Called from the main grid's onTopCpChange (see app.js), same as
+  // BlockHeader.setTopCp -- tracks which block is currently scrolled into
+  // view in the 符号表 grid, for the 現在地 shortcut button below.
+  setTopCp(cp) {
+    this.currentCp = cp;
+  }
+
+  scrollToBlockStart(startCp) {
+    const li = this.allListEl.querySelector(`.block-item[data-cp="${startCp}"]`);
+    if (li) li.scrollIntoView({ block: 'start' });
+  }
+
+  scrollToCurrentBlock() {
+    if (this.currentCp == null) return;
+    const b = D.blockOf(this.currentCp);
+    if (b) this.scrollToBlockStart(b.s);
+  }
+
+  scrollToEmojiBlock() {
+    const b = D.getBlocks().find((blk) => D.blockGroup(blk) === 'emoji');
+    if (b) this.scrollToBlockStart(b.s);
   }
 
   // Favorites keep the user's own drag-to-reorder order (not codepoint

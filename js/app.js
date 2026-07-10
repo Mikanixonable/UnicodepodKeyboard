@@ -9,6 +9,7 @@ const { BlockHeader, Legend, BlockSidebar } = window.App.Blocks;
 const { DetailModal } = window.App.Modal;
 const { openMenu } = window.App.Menu;
 const { ColorMode } = window.App.ColorMode;
+const { FavHighlight } = window.App.FavHighlight;
 const { BlockFavorites } = window.App.BlockFavorites;
 const { UnicodeArt } = window.App.Art;
 const { ArtLists } = window.App.ArtLists;
@@ -36,6 +37,7 @@ async function main() {
   const mylists = new MyLists();
   const history = new History();
   const colorMode = new ColorMode();
+  const favHighlight = new FavHighlight();
   const blockFavorites = new BlockFavorites();
   const art = new UnicodeArt();
   const artLists = new ArtLists();
@@ -45,7 +47,7 @@ async function main() {
 
   function drawCurrent(text) {
     renderCharBoard(currentBoard, distinctCodepoints(text), mylists, colorMode,
-      '出力欄に文字を入力すると、ここに使われている文字が表示されます。');
+      '出力欄に文字を入力すると、ここに使われている文字が表示されます。', favHighlight.get());
   }
 
   // ---- output area -------------------------------------------------------
@@ -145,7 +147,7 @@ async function main() {
   // right-menu-zone block list: same jump behavior as the modal, but also
   // switches to the 符号表 tab first (revealInAll), since it's reachable
   // from any tab.
-  new BlockSidebar($('#block-sidebar'), {
+  const sidebar = new BlockSidebar($('#block-sidebar'), {
     onJump: (cp) => {
       revealInAll && revealInAll(cp);
       // Mobile: this sidebar lives in the right-hand drawer, so picking a
@@ -163,8 +165,17 @@ async function main() {
     onReveal: (cp, flash) => revealInAll && revealInAll(cp, flash),
     mylists,
     colorMode,
-    onTopCpChange: (cp) => header.setTopCp(cp),
+    favHighlight,
+    onTopCpChange: (cp) => { header.setTopCp(cp); sidebar.setTopCp(cp); },
   });
+
+  // Mobile: opening the right drawer shows this same sidebar -- scroll it
+  // to the block currently in view in the 符号表 grid, instead of leaving
+  // it wherever it last was, so it reflects "where you are" right away
+  // (same shortcut as the sidebar's own 現在地 button). Wired after
+  // setupMobileDrawers() below so this listener fires after its own
+  // 'open(right)' one (registration order), i.e. once the drawer is
+  // actually opening.
 
   // ---- color-coding mode (none / category / age) -------------------------
   colorMode.subscribe(() => {
@@ -172,6 +183,14 @@ async function main() {
     drawHist();
     drawCurrent(output.ta.value);
   });
+
+  // ---- お気に入りハイライト (符号表/入力内容/入力履歴 only; off by default) ----
+  favHighlight.subscribe(() => {
+    grid.rerender();
+    drawHist();
+    drawCurrent(output.ta.value);
+  });
+  setupFavHighlightToggle(favHighlight);
 
   // ---- mylist & history keyboards ---------------------------------------
   const favPanel = $('#panel-fav');
@@ -214,10 +233,13 @@ async function main() {
     mylistRenameBtn.title = active.builtIn ? 'お気に入りは名前を変更できません' : `${active.name} の名前を変更`;
   }
 
+  // false: every item shown here is already a member of whichever list is
+  // active (お気に入り or another マイリスト), so highlighting them all
+  // would just be noise -- see renderCharBoard's `highlight` param.
   const drawFav = () => renderCharBoard(favBoard, mylists.activeList.items, mylists, colorMode,
-    `${mylists.activeLabel} はまだありません。<br>文字を右クリック（または長押し）して「${mylists.activeLabel}に追加」してください。`);
+    `${mylists.activeLabel} はまだありません。<br>文字を右クリック（または長押し）して「${mylists.activeLabel}に追加」してください。`, false);
   const drawHist = () => renderCharBoard(histBoard, history.list, mylists, colorMode,
-    '入力履歴はまだありません。<br>文字を入力すると、ここに新しい順で表示されます。');
+    '入力履歴はまだありません。<br>文字を入力すると、ここに新しい順で表示されます。', favHighlight.get());
 
   // mylist changes affect the badge on all three boards
   mylists.subscribe(() => { renderMyListControls(); drawFav(); drawHist(); drawCurrent(output.ta.value); });
@@ -451,6 +473,13 @@ async function main() {
   closeMobileDrawers = setupMobileDrawers();
   setupResponsiveCount();
 
+  // Once the right drawer is open, scroll its block list to whatever's
+  // currently displayed in the 符号表 grid -- same shortcut as the
+  // sidebar's own 現在地 button, just automatic on open.
+  $('#menu-right-toggle').addEventListener('click', () => {
+    requestAnimationFrame(() => sidebar.scrollToCurrentBlock());
+  });
+
   // ---- mode toggle -------------------------------------------------------
   const tabs = document.querySelectorAll('.mode-tab');
   const panels = {
@@ -539,6 +568,20 @@ function setupFontToggle() {
   apply(cur());
 }
 
+// OFF/ON toggle for お気に入り強調 (see favhighlight.js) -- same button-group
+// pattern as setupFontToggle, just backed by the FavHighlight store instead
+// of a plain localStorage key so other code can subscribe to changes.
+function setupFavHighlightToggle(favHighlight) {
+  const opts = document.querySelectorAll('.fav-highlight-opt');
+  const render = () => {
+    const on = favHighlight.get();
+    opts.forEach((o) => o.classList.toggle('active', (o.dataset.favHighlight === 'on') === on));
+  };
+  opts.forEach((o) => o.addEventListener('click', () => favHighlight.set(o.dataset.favHighlight === 'on')));
+  favHighlight.subscribe(render);
+  render();
+}
+
 // Slide-in drawers for the left (settings) and right (block picker) menu
 // zones, shown only on narrow screens (see the max-width:768px media query).
 // Opening one closes the other; a backdrop, the close buttons, and Escape all
@@ -604,7 +647,12 @@ function escapeHtml(s) {
 }
 
 // Render a list of codepoints as a clickable keyboard (mylist / history).
-function renderCharBoard(el, list, mylists, colorMode, emptyHtml) {
+// `highlight` controls the fav-star box-shadow (see .cell.fav): callers
+// showing a mylist's own contents (お気に入り or another マイリスト) pass
+// false, since every item there is trivially "favorited" by definition and
+// highlighting all of them is just noise -- only 符号表/入力内容/入力履歴
+// respect the actual お気に入り強調 setting.
+function renderCharBoard(el, list, mylists, colorMode, emptyHtml, highlight = true) {
   if (!list.length) {
     el.innerHTML = `<p class="fav-empty">${emptyHtml}</p>`;
     return;
@@ -615,7 +663,7 @@ function renderCharBoard(el, list, mylists, colorMode, emptyHtml) {
   for (const cp of list) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'cell' + (mylists.has(cp) ? ' fav' : '');
+    b.className = 'cell' + (highlight && mylists.has(cp) ? ' fav' : '');
     b.dataset.cp = cp;
     b.dataset.group = D.groupForMode(mode, cp) || '';
     b.dataset.badge = mylists.activeList.icon;
