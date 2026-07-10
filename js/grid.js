@@ -228,8 +228,17 @@ class Grid {
   }
 
   bindPointer() {
-    let timer = null, suppress = false, downXY = null;
+    let timer = null, suppress = false, downXY = null, pressedEl = null;
     const clearTimer = () => { clearTimeout(timer); timer = null; };
+    // Explicit tap-feedback instead of relying on CSS :active (see the
+    // .cell.pressed comment in styles.css): the grid rebuilds its cells on
+    // every scroll frame, and touch browsers track :active by screen
+    // position rather than element identity, so a scroll can leave a
+    // *different* cell than the one actually tapped looking highlighted.
+    // Always clearing this explicitly (up/cancel/leave/scroll) avoids that.
+    const clearPressed = () => {
+      if (pressedEl) { pressedEl.classList.remove('pressed'); pressedEl = null; }
+    };
 
     this.rowsEl.addEventListener('pointerdown', (e) => {
       const cp = this.cellCp(e.target);
@@ -237,6 +246,9 @@ class Grid {
       suppress = false;
       downXY = { x: e.clientX, y: e.clientY };
       if (e.pointerType !== 'mouse') {
+        clearPressed();
+        pressedEl = e.target.closest('.cell[data-cp]');
+        if (pressedEl) pressedEl.classList.add('pressed');
         clearTimer();
         timer = setTimeout(() => {
           suppress = true;
@@ -250,8 +262,10 @@ class Grid {
         clearTimer();
     });
 
-    this.rowsEl.addEventListener('pointerup', clearTimer);
-    this.rowsEl.addEventListener('pointercancel', () => { clearTimer(); suppress = true; });
+    this.rowsEl.addEventListener('pointerup', () => { clearTimer(); clearPressed(); });
+    this.rowsEl.addEventListener('pointercancel', () => { clearTimer(); clearPressed(); suppress = true; });
+    this.rowsEl.addEventListener('pointerleave', clearPressed);
+    this.scroll.addEventListener('scroll', clearPressed, { passive: true });
 
     this.rowsEl.addEventListener('click', (e) => {
       const cp = this.cellCp(e.target);

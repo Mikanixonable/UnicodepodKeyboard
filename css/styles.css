@@ -1430,7 +1430,22 @@ button {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
-.cell:active {
+/* Restricted to real pointer/hover devices (mouse), not touch: the main
+   符号表 grid virtualizes its rows (rebuilding cells on every scroll frame
+   -- see grid.js render()), and touch browsers track :active by *screen
+   position*, not element identity. Scrolling shifts new cells under a touch
+   point that's still considered "down", so whatever cell ends up there
+   inherits a stuck-looking highlight that was really meant for the one
+   originally tapped. grid.js manages its own .pressed class explicitly
+   instead (cleared on pointerup/cancel/leave/scroll), which doesn't have
+   this failure mode. */
+@media (hover: hover) and (pointer: fine) {
+  .cell:active {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+}
+
+.cell.pressed {
   background: color-mix(in srgb, var(--accent) 28%, transparent);
 }
 

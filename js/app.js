@@ -224,7 +224,7 @@ async function main() {
   history.subscribe(drawHist);
   mylistSelect.addEventListener('change', () => { mylists.setActive(mylistSelect.value); });
   mylistAddBtn.addEventListener('click', () => {
-    const suggested = `マイリスト ${mylists.lists.length}`
+    const suggested = nextMylistName(mylists.lists);
     const name = window.prompt('新しいマイリスト名を入力してください', suggested);
     if (!name) return;
     mylists.createList(name);
@@ -380,9 +380,7 @@ async function main() {
   // Named so both the desktop buttons and the mobile "マイリスト操作" combined
   // menu (see #art-mylist-menu-btn below) can share the same logic.
   function doArtMylistAdd() {
-    const suggested = artLists.lists.some((list) => list.name === 'マイリスト 2')
-      ? `マイリスト ${artLists.lists.length}`
-      : 'マイリスト 2';
+    const suggested = nextMylistName(artLists.lists);
     const name = window.prompt('新しいマイリスト名を入力してください', suggested);
     if (!name) return;
     const list = artLists.createList(name);
@@ -581,6 +579,18 @@ function setupResponsiveCount() {
   const apply = () => (mq.matches ? mobileSlot : outputBar).appendChild(count);
   mq.addEventListener('change', apply);
   apply();
+}
+
+// Lowest unused "マイリスト N" (N starting at 1), checked against actual
+// existing names -- not list count, which counts the built-in お気に入り
+// too and drifts out of sync with the numbering as soon as any list is
+// renamed or deleted, producing suggestions like "マイリスト 2" repeatedly
+// or "マイリスト 2 2" once createList()'s own collision suffix kicks in.
+function nextMylistName(lists) {
+  const existing = new Set(lists.map((l) => l.name));
+  let n = 1;
+  while (existing.has(`マイリスト ${n}`)) n++;
+  return `マイリスト ${n}`;
 }
 
 function escapeHtml(s) {
