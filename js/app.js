@@ -41,6 +41,7 @@ async function main() {
   const artLists = new ArtLists();
   const currentBoard = $('#current-board');
   let revealInAll = null;
+  let closeMobileDrawers = null;
 
   function drawCurrent(text) {
     renderCharBoard(currentBoard, distinctCodepoints(text), mylists, colorMode,
@@ -71,7 +72,7 @@ async function main() {
 
   // Bulk add/remove: every distinct codepoint currently in the output area,
   // to/from whichever mylist the user picks from the popup menu.
-  function openOutputMyListMenu(x, y, mode) {
+  function openOutputMyListMenu(x, y, mode, align) {
     const cps = distinctCodepoints(output.ta.value);
     const items = mylists.lists.map((list) => ({
       label: `${list.icon} ${list.name}${mode === 'add' ? 'へ追加' : 'から削除'}`,
@@ -84,7 +85,7 @@ async function main() {
         showToast(mode === 'add' ? `${cps.length} 文字を追加しました` : `${cps.length} 文字を削除しました`);
       },
     }));
-    openMenu(x, y, items);
+    openMenu(x, y, items, { align });
   }
   $('#output-add-mylist-btn').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -98,19 +99,23 @@ async function main() {
   // Mobile: the two buttons above are hidden (see .output-bar .btn-group in
   // the max-width:768px media query) in favor of a single combined ★ button
   // in the top bar; tapping it offers the 追加/削除 choice first, then
-  // chains into the same per-mylist menu as the desktop buttons.
+  // chains into the same per-mylist menu as the desktop buttons. It sits at
+  // the top bar's right edge, so the menu is right-aligned (anchored at the
+  // button's right edge, hanging down-left) to match.
   $('#mobile-mylist-btn').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
-    const x = r.left, y = r.bottom + 6;
+    const x = r.right, y = r.bottom + 6;
     openMenu(x, y, [
-      { label: '★＋ 全て追加', onClick: () => openOutputMyListMenu(x, y, 'add') },
-      { label: '★－ 全て削除', onClick: () => openOutputMyListMenu(x, y, 'remove') },
-    ]);
+      { label: '★＋ 全て追加', onClick: () => openOutputMyListMenu(x, y, 'add', 'right') },
+      { label: '★－ 全て削除', onClick: () => openOutputMyListMenu(x, y, 'remove', 'right') },
+    ], { align: 'right' });
   });
 
   // Mobile: undo/redo are likewise hidden from .output-bar (see the
   // max-width:768px media query) in favor of one combined ↺ button in the
-  // top bar, offering the choice first -- same pattern as ★ above.
+  // top bar, offering the choice first -- same pattern as ★ above. This one
+  // sits at the top bar's left edge, so the menu stays left-aligned (the
+  // default).
   $('#mobile-undo-redo-btn').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     openMenu(r.left, r.bottom + 6, [
@@ -141,7 +146,13 @@ async function main() {
   // switches to the 符号表 tab first (revealInAll), since it's reachable
   // from any tab.
   new BlockSidebar($('#block-sidebar'), {
-    onJump: (cp) => revealInAll && revealInAll(cp),
+    onJump: (cp) => {
+      revealInAll && revealInAll(cp);
+      // Mobile: this sidebar lives in the right-hand drawer, so picking a
+      // block should close it and drop straight into the newly-scrolled
+      // 符号表 grid instead of leaving the drawer covering it.
+      closeMobileDrawers && closeMobileDrawers();
+    },
     colorMode,
     blockFavorites,
   });
@@ -269,6 +280,34 @@ async function main() {
     art.rename(work.id, name.trim());
   }
 
+  // ---- Unicode Art edit modal (rewrite a saved work's whole text) --------
+  const artEditModal = $('#art-edit-modal');
+  const artEditTextarea = $('#art-edit-textarea');
+  let artEditingId = null;
+
+  function openArtEditModal(work) {
+    artEditingId = work.id;
+    artEditTextarea.value = work.text;
+    artEditModal.hidden = false;
+    artEditTextarea.focus();
+  }
+  function closeArtEditModal() {
+    artEditModal.hidden = true;
+    artEditingId = null;
+  }
+  $('#art-edit-close').addEventListener('click', closeArtEditModal);
+  artEditModal.querySelector('.modal-backdrop').addEventListener('click', closeArtEditModal);
+  $('#art-edit-save').addEventListener('click', () => {
+    const text = artEditTextarea.value;
+    if (!text) { showToast('内容が空です'); return; }
+    art.editText(artEditingId, text);
+    closeArtEditModal();
+    showToast('作品を更新しました');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!artEditModal.hidden && e.key === 'Escape') closeArtEditModal();
+  });
+
   // Shared by every Unicode Art tile across all three sub-tabs (全て/お気に
   // 入り/マイリスト): rename, share, per-list add/remove (uses artLists --
   // a separate store from the character mylists, since these are different
@@ -277,6 +316,7 @@ async function main() {
     const work = art.items.find((w) => w.id === id);
     if (!work) return [];
     const items = [
+      { label: '📝 編集', onClick: () => openArtEditModal(work) },
       { label: '✎ 名前を変更', onClick: () => renameArt(work) },
       {
         label: '🔗 共有用リンクをコピー',
@@ -410,7 +450,7 @@ async function main() {
   setupFontToggle();
 
   // ---- mobile drawers (left = settings, right = block picker) ------------
-  setupMobileDrawers();
+  closeMobileDrawers = setupMobileDrawers();
   setupResponsiveCount();
 
   // ---- mode toggle -------------------------------------------------------
@@ -527,6 +567,7 @@ function setupMobileDrawers() {
   for (const btn of document.querySelectorAll('.drawer-close'))
     btn.addEventListener('click', close);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  return close;
 }
 
 // Relocates the #count node (文字数/コードポイント数) between its normal
@@ -583,6 +624,8 @@ function renderCharBoard(el, list, mylists, colorMode, emptyHtml) {
 // *interaction* (tap to insert, long-press/right-click for a menu of
 // secondary actions) matches every other board in the app for consistency,
 // rather than a scattering of small corner buttons.
+const ART_MAX_LINES = 20;
+
 function renderArtBoard(el, items, emptyHtml) {
   if (!items.length) {
     el.innerHTML = `<p class="fav-empty">${emptyHtml}</p>`;
@@ -594,12 +637,35 @@ function renderArtBoard(el, items, emptyHtml) {
     const tile = document.createElement('div');
     tile.className = 'art-tile';
     tile.dataset.artId = work.id;
+    const lines = work.text.split('\n');
+    const displayText = lines.length > ART_MAX_LINES
+      ? lines.slice(0, ART_MAX_LINES).join('\n') + '\n…'
+      : work.text;
     tile.innerHTML =
       (work.title ? `<div class="art-tile-title">${escapeHtml(work.title)}</div>` : '') +
-      `<div class="art-tile-text">${escapeHtml(work.text)}</div>`;
+      `<div class="art-tile-text">${escapeHtml(displayText)}</div>`;
     wrap.appendChild(tile);
   }
   el.replaceChildren(wrap);
+
+  // Shrink each tile's font-size just enough that its widest line fits
+  // without wrapping -- word-wrapping an Art piece would shift later
+  // characters onto a new line and visibly wreck its alignment, so
+  // scaling the whole tile down is the lesser evil. Needs the tiles to
+  // already be in the (now-attached) DOM to measure real layout widths.
+  // Never shrinks past half-size though -- an extreme one-line piece would
+  // otherwise scale down to an illegibly tiny font; overflow:hidden clips
+  // whatever's still too wide beyond that floor instead.
+  const ART_MIN_SCALE = 0.5;
+  for (const textEl of wrap.querySelectorAll('.art-tile-text')) {
+    const available = textEl.clientWidth;
+    const natural = textEl.scrollWidth;
+    if (available > 0 && natural > available) {
+      const fontSize = parseFloat(getComputedStyle(textEl).fontSize);
+      const scale = Math.max(ART_MIN_SCALE, available / natural);
+      textEl.style.fontSize = `${fontSize * scale}px`;
+    }
+  }
 }
 
 // Same long-press-vs-tap pattern as bindCharBoard, keyed by data-art-id

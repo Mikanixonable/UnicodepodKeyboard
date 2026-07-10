@@ -52,6 +52,15 @@ class UnicodeArt {
     return true;
   }
 
+  editText(id, text) {
+    const work = this.items.find((w) => w.id === id);
+    if (!work || !text) return false;
+    work.text = text;
+    this.save();
+    this.emit();
+    return true;
+  }
+
   remove(id) {
     const before = this.items.length;
     this.items = this.items.filter((w) => w.id !== id);

@@ -44,6 +44,7 @@
     <!-- 左メニューゾーン -->
     <aside class="menu-zone menu-left">
       <button type="button" class="drawer-close" data-drawer="left" aria-label="閉じる">×</button>
+      <span class="drawer-title">表示</span>
       <header class="site-header">
         <span class="site-icon" aria-hidden="true">U</span>
         <h1 class="site-title">Unicodepod Keyboard</h1>
@@ -145,6 +146,7 @@
     <!-- 右メニューゾーン -->
     <aside class="menu-zone menu-right">
       <button type="button" class="drawer-close" data-drawer="right" aria-label="閉じる">×</button>
+      <span class="drawer-title">移動</span>
       <div id="jump-form-slot" class="jump-form-slot"></div>
       <div id="block-sidebar" class="block-sidebar"></div>
     </aside>
@@ -152,6 +154,21 @@
 
   <!-- 詳細モーダル -->
   <div id="modal" class="modal" hidden></div>
+
+  <!-- Unicode Art 編集モーダル -->
+  <div id="art-edit-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="作品を編集">
+      <div class="modal-close-anchor">
+        <button type="button" id="art-edit-close" class="modal-close" aria-label="閉じる">✕</button>
+      </div>
+      <h2 class="art-edit-title">作品を編集</h2>
+      <textarea id="art-edit-textarea" class="art-edit-textarea" rows="6" spellcheck="false"></textarea>
+      <div class="art-edit-actions">
+        <button type="button" id="art-edit-save" class="btn primary">保存</button>
+      </div>
+    </div>
+  </div>
 
   <!-- コピー通知 -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

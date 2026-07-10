@@ -1660,10 +1660,12 @@ button {
   padding: 12px clamp(10px, 3vw, 20px);
 }
 
+/* Vertical masonry via CSS multi-column layout: tiles flow down each column
+   before wrapping to the next, so tiles of differing heights (short vs. long
+   Art pieces) pack tightly instead of forced into uniform grid rows. */
 .art-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 10px;
+  column-width: 170px;
+  column-gap: 10px;
 }
 
 /* Whole tile is the tap target (see bindArtBoard in app.js: tap inserts,
@@ -1671,6 +1673,10 @@ button {
    same interaction as every other board in the app, so no corner buttons
    are needed here). */
 .art-tile {
+  display: inline-block;
+  width: 100%;
+  break-inside: avoid;
+  margin-bottom: 10px;
   min-height: 90px;
   padding: 10px;
   border: 1px solid var(--border);
@@ -1700,16 +1706,19 @@ button {
   white-space: nowrap;
 }
 
+/* ~70% of the old 1.1rem. white-space:pre (not word-break:break-all) so a
+   long line never wraps -- for an Art piece, wrapping would shift later
+   characters onto a new line and visibly wreck the picture's alignment.
+   Overflow is clipped as a last-resort safety net; app.js additionally
+   shrinks the font-size per-tile (see renderArtBoard) so most content fits
+   without ever needing to clip. Height is capped at 20 lines' worth (see
+   the truncation in renderArtBoard) rather than clamped by CSS. */
 .art-tile-text {
   font-family: var(--font-glyph);
-  font-size: 1.1rem;
+  font-size: .77rem;
   line-height: 1.4;
-  word-break: break-all;
+  white-space: pre;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
-  -webkit-box-orient: vertical;
 }
 
 /* ---------- context menu ---------- */
@@ -1899,6 +1908,41 @@ button {
   font-size: .8rem;
 }
 
+.art-edit-title {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.art-edit-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: var(--font-glyph);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.art-edit-textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Deliberately not .modal-actions: that class's mobile rule turns every
+   .btn inside it into a full-width square (sized for the character detail
+   modal's row of 5 icon buttons), which would blow up this modal's single
+   保存 button to occupy half the box. Plain ordinary button sizing instead. */
+.art-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 8px 8px;
+}
+
 .modal-actions .btn {
   flex: 1;
   padding: 8px;
@@ -1945,6 +1989,7 @@ button {
 .mobile-bar { display: none; }
 .drawer-backdrop { display: none; }
 .drawer-close { display: none; }
+.drawer-title { display: none; }
 
 @media (max-width: 768px) {
   /* body becomes a vertical stack: fixed top bar + full-height content */
@@ -2086,6 +2131,19 @@ button {
 
   #art-mylist-menu-btn {
     display: inline-flex;
+  }
+
+  /* Tiles: ~2 lines tall instead of ~3 (min-height), and tile-to-tile
+     spacing halved -- with the vertical (margin-bottom) and horizontal
+     (column-gap) gaps now matching, instead of the desktop 10px/10px which
+     happened to already be equal but is halved here regardless. */
+  .art-grid {
+    column-gap: 5px;
+  }
+
+  .art-tile {
+    min-height: 54px;
+    margin-bottom: 5px;
   }
 
   .output-bar .btn-group {
@@ -2344,8 +2402,31 @@ button {
     z-index: 1;
   }
 
-  .menu-left .drawer-close { right: 8px; }
-  .menu-right .drawer-close { left: 8px; }
+  .menu-left .drawer-close { left: 8px; }
+  .menu-right .drawer-close { right: 8px; }
+
+  /* Drawer titles: 表示 (display/settings) for the left menu, 移動
+     (navigate) for the right one -- sit at the *opposite* edge from the
+     close button (which is on the same side as the drawer itself), so the
+     two don't crowd together at one corner. */
+  .drawer-title {
+    position: absolute;
+    top: 0;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .menu-left .drawer-title {
+    right: 16px;
+  }
+
+  .menu-right .drawer-title {
+    left: 16px;
+  }
 
   /* Detail modal: .modal itself used to also be a scroll container
      (overflow-y:auto), and its 100vh-based max-height calc could exceed the
