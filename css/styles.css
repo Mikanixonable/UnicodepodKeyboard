@@ -36,17 +36,25 @@
   --grp-unassigned: #52525b;
 
   /* age-era colors (chronological gradient): shared by grid cells and the
-     block picker swatch when color mode = "age" */
+     block picker swatch when color mode = "age". 17 stops now (see ERAS in
+     data.js) -- one per major version from 7.0 on. */
   --era-e1: #4c6ef5;
   --era-e2: #4dabf7;
-  --era-e3: #38d9a9;
-  --era-e4: #94d82d;
-  --era-e5: #fcc419;
-  --era-e6: #ff922b;
-  --era-e7: #ff6b6b;
-  --era-e8: #f06595;
-  --era-e9: #cc5de8;
-  --era-e10: #845ef7;
+  --era-e3: #22b8cf;
+  --era-e4: #38d9a9;
+  --era-e5: #51cf66;
+  --era-e6: #94d82d;
+  --era-e7: #fcc419;
+  --era-e8: #ffa94d;
+  --era-e9: #ff922b;
+  --era-e10: #ff6b6b;
+  --era-e11: #fa5252;
+  --era-e12: #f06595;
+  --era-e13: #e64980;
+  --era-e14: #cc5de8;
+  --era-e15: #9775fa;
+  --era-e16: #845ef7;
+  --era-e17: #5c7cfa;
 }
 
 /* Noto stack: lists many script-specific Noto families so the browser falls
@@ -406,6 +414,15 @@ button {
 .font-toggle {
   /* 上: 4px、右: clamp(...)、下: 2px（ここを狭く）、左: clamp(...) */
   padding: 4px clamp(10px, 3vw, 20px) 0 clamp(10px, 3vw, 20px);
+}
+
+/* Sits between .font-toggle and .attr-legend with no spacing of its own
+   otherwise -- add breathing room + a divider on both sides so it doesn't
+   crowd its neighbors. */
+.fav-highlight-toggle {
+  padding: 8px clamp(10px, 3vw, 20px);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .meta-description {
@@ -866,6 +883,25 @@ button {
   flex: none;
 }
 
+/* Only the block picker's legend is clickable (filters the list below to
+   that group) -- the left menu's legend is a separate Legend instance with
+   no click handler wired up. */
+.block-pop-box .legend-item:not(.legend-none) {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.block-pop-box .legend-item:not(.legend-none):hover {
+  background: var(--hover, rgba(128, 128, 128, .12));
+}
+
+.block-pop-box .legend-item.legend-active {
+  background: var(--accent-bg, rgba(76, 110, 245, .16));
+  outline: 1px solid var(--accent, #4c6ef5);
+}
+
 .block-pop-box .legend-label {
   min-width: 0;
   flex: 1;
@@ -1009,6 +1045,34 @@ button {
 
 .swatch[data-group="e10"] {
   --grp-color: var(--era-e10);
+}
+
+.swatch[data-group="e11"] {
+  --grp-color: var(--era-e11);
+}
+
+.swatch[data-group="e12"] {
+  --grp-color: var(--era-e12);
+}
+
+.swatch[data-group="e13"] {
+  --grp-color: var(--era-e13);
+}
+
+.swatch[data-group="e14"] {
+  --grp-color: var(--era-e14);
+}
+
+.swatch[data-group="e15"] {
+  --grp-color: var(--era-e15);
+}
+
+.swatch[data-group="e16"] {
+  --grp-color: var(--era-e16);
+}
+
+.swatch[data-group="e17"] {
+  --grp-color: var(--era-e17);
 }
 
 /* 2D palette: many blocks per row instead of one long vertical list. */
@@ -1196,6 +1260,34 @@ button {
 
 .block-item[data-group="e10"] {
   --grp-color: var(--era-e10);
+}
+
+.block-item[data-group="e11"] {
+  --grp-color: var(--era-e11);
+}
+
+.block-item[data-group="e12"] {
+  --grp-color: var(--era-e12);
+}
+
+.block-item[data-group="e13"] {
+  --grp-color: var(--era-e13);
+}
+
+.block-item[data-group="e14"] {
+  --grp-color: var(--era-e14);
+}
+
+.block-item[data-group="e15"] {
+  --grp-color: var(--era-e15);
+}
+
+.block-item[data-group="e16"] {
+  --grp-color: var(--era-e16);
+}
+
+.block-item[data-group="e17"] {
+  --grp-color: var(--era-e17);
 }
 
 .block-item-name {
@@ -1431,6 +1523,34 @@ button {
 
 .cell[data-group="e10"] {
   --grp-color: var(--era-e10);
+}
+
+.cell[data-group="e11"] {
+  --grp-color: var(--era-e11);
+}
+
+.cell[data-group="e12"] {
+  --grp-color: var(--era-e12);
+}
+
+.cell[data-group="e13"] {
+  --grp-color: var(--era-e13);
+}
+
+.cell[data-group="e14"] {
+  --grp-color: var(--era-e14);
+}
+
+.cell[data-group="e15"] {
+  --grp-color: var(--era-e15);
+}
+
+.cell[data-group="e16"] {
+  --grp-color: var(--era-e16);
+}
+
+.cell[data-group="e17"] {
+  --grp-color: var(--era-e17);
 }
 
 .cell:hover {

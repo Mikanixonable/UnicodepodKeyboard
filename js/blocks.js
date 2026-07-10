@@ -359,6 +359,7 @@ class BlockHeader {
     this.open = false;
     this.current = null;
     this.currentBlock = null;
+    this.activeFilter = null;
 
     root.innerHTML = `
       <div class="block-bar">
@@ -416,6 +417,20 @@ class BlockHeader {
     this.buildList();
     this.buildPlaneJump();
     new Legend(this.legendEl, colorMode);
+    // Central block picker only: clicking a legend item filters the list
+    // down to that group (click again to clear). The whole item is the hit
+    // area, not just the swatch dot. Delegated on the stable .block-legend
+    // container since Legend.render() replaces its innerHTML on every
+    // color-mode change.
+    this.legendEl.addEventListener('click', (e) => {
+      const item = e.target.closest('.legend-item');
+      const swatch = item && item.querySelector('.swatch[data-group]');
+      if (!swatch) return;
+      const g = swatch.dataset.group;
+      this.activeFilter = this.activeFilter === g ? null : g;
+      this.updateLegendActive();
+      this.filter(this.search.value);
+    });
 
     this.btn.addEventListener('click', () => this.toggle());
     root.querySelector('.block-pop-close').addEventListener('click', () => this.close());
@@ -443,11 +458,27 @@ class BlockHeader {
     document.addEventListener('keydown', (e) => {
       if (this.open && e.key === 'Escape') { this.close(); this.btn.focus(); }
     });
-    this.colorMode.subscribe(() => this.applyColorMode());
+    this.colorMode.subscribe(() => {
+      this.applyColorMode();
+      // Group keys differ between color modes (categories vs. eras), so a
+      // filter picked under one mode wouldn't mean anything under another.
+      this.activeFilter = null;
+      this.updateLegendActive();
+      this.filter(this.search.value);
+    });
     this.blockFavorites.subscribe(() => this.applyFavorites());
   }
 
   mode() { return this.colorMode.get(); }
+
+  // Highlights whichever legend item corresponds to the active group
+  // filter (if any) so the user can see what's currently applied.
+  updateLegendActive() {
+    for (const item of this.legendEl.querySelectorAll('.legend-item')) {
+      const sw = item.querySelector('.swatch[data-group]');
+      item.classList.toggle('legend-active', !!sw && sw.dataset.group === this.activeFilter);
+    }
+  }
 
   applyFavorites() {
     for (const li of this.items)
@@ -498,7 +529,9 @@ class BlockHeader {
         headerVisible = false;
         continue;
       }
-      const visible = !s || el.textContent.toLowerCase().includes(s);
+      const matchesText = !s || el.textContent.toLowerCase().includes(s);
+      const matchesGroup = !this.activeFilter || el.dataset.group === this.activeFilter;
+      const visible = matchesText && matchesGroup;
       el.hidden = !visible;
       if (visible) headerVisible = true;
     }
