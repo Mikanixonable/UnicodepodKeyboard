@@ -340,13 +340,9 @@ async function main() {
   }
   bindArtBoard(artBoard, insertArt, artMenuItems);
 
-  artViewSelect.addEventListener('change', () => {
-    artView = artViewSelect.value;
-    if (artView !== ART_ALL_VIEW) artLists.setActive(artView);
-    renderArtViewSelect();
-    drawArtBoard();
-  });
-  artMylistAddBtn.addEventListener('click', () => {
+  // Named so both the desktop buttons and the mobile "マイリスト操作" combined
+  // menu (see #art-mylist-menu-btn below) can share the same logic.
+  function doArtMylistAdd() {
     const suggested = artLists.lists.some((list) => list.name === 'マイリスト 2')
       ? `マイリスト ${artLists.lists.length}`
       : 'マイリスト 2';
@@ -356,15 +352,15 @@ async function main() {
     artView = list.id;
     renderArtViewSelect();
     drawArtBoard();
-  });
-  artMylistRenameBtn.addEventListener('click', () => {
+  }
+  function doArtMylistRename() {
     const list = artView === ART_ALL_VIEW ? null : artLists.findList(artView);
     if (!list || list.builtIn) return;
     const name = window.prompt('新しい名前を入力してください', list.name);
     if (!name) return;
     artLists.renameList(list.id, name);
-  });
-  artMylistDeleteBtn.addEventListener('click', () => {
+  }
+  function doArtMylistDelete() {
     const list = artView === ART_ALL_VIEW ? null : artLists.findList(artView);
     if (!list || list.builtIn) return;
     if (!window.confirm(`「${list.name}」を削除しますか？`)) return;
@@ -372,6 +368,33 @@ async function main() {
     artView = ART_ALL_VIEW;
     renderArtViewSelect();
     drawArtBoard();
+  }
+
+  artViewSelect.addEventListener('change', () => {
+    artView = artViewSelect.value;
+    if (artView !== ART_ALL_VIEW) artLists.setActive(artView);
+    renderArtViewSelect();
+    drawArtBoard();
+  });
+  artMylistAddBtn.addEventListener('click', doArtMylistAdd);
+  artMylistRenameBtn.addEventListener('click', doArtMylistRename);
+  artMylistDeleteBtn.addEventListener('click', doArtMylistDelete);
+
+  // Mobile: the three buttons above are hidden (see .board-bar .mylist-actions
+  // in the max-width:768px media query) in favor of one combined "マイリスト
+  //操作" button, offering the three choices first -- same ★/↺ pattern as
+  // elsewhere in the top bar.
+  $('#art-mylist-menu-btn').addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const list = artView === ART_ALL_VIEW ? null : artLists.findList(artView);
+    const locked = !list || list.builtIn;
+    openMenu(r.left, r.bottom + 6, [
+      { label: '＋ 作成', onClick: doArtMylistAdd },
+      ...(locked ? [] : [
+        { label: '名前変更', onClick: doArtMylistRename },
+        { label: '削除', onClick: doArtMylistDelete },
+      ]),
+    ]);
   });
 
   artLists.subscribe(() => { renderArtViewSelect(); drawArtBoard(); });

@@ -138,6 +138,11 @@ html,
 body {
   height: 100%;
   margin: 0;
+  /* Prevents double-tap-to-zoom on mobile (the viewport meta's
+     maximum-scale=1 alone doesn't reliably stop it on all browsers) --
+     "manipulation" keeps normal scrolling/pinch-zoom, just drops the
+     double-tap zoom gesture specifically. */
+  touch-action: manipulation;
 }
 
 body {
@@ -1621,6 +1626,13 @@ button {
 }
 
 /* ---------- Unicode Art (saved output-area snapshots, as tiles) --------- */
+/* Combined "マイリスト操作" button: hidden by default (desktop keeps the
+   three separate buttons, which have room); shown only on mobile (see the
+   max-width:768px media query), which hides those three instead. */
+#art-mylist-menu-btn {
+  display: none;
+}
+
 /* Matches .btn.small's padding (5px, not .mylist-select's usual 7px) so the
    view dropdown sits at the same height as the ＋作成/名前変更/削除/保存
    buttons sharing its row. */
@@ -2062,6 +2074,18 @@ button {
   #undo-btn,
   #redo-btn {
     display: none;
+  }
+
+  /* Unicode Art: 作成/名前変更/削除 collapse into one "マイリスト操作" button
+     to save horizontal space next to the view dropdown. */
+  #art-mylist-add,
+  #art-mylist-rename,
+  #art-mylist-delete {
+    display: none;
+  }
+
+  #art-mylist-menu-btn {
+    display: inline-flex;
   }
 
   .output-bar .btn-group {
