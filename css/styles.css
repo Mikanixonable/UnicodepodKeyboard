@@ -6,19 +6,19 @@
      (prefers-color-scheme: light) below auto-switches for light-OS users,
      and an explicit [data-theme="light"/"dark"] (see js/app.js
      setupThemeToggle) always wins over both when the user picks one. ---------- */
-  --bg: #262b31;
+  --bg: #333944;
   --panel: var(--bg);
-  --panel-2: #22262c;
-  --elevated: #2d323a;
-  --border: #383e46;
+  --panel-2: #2f343f;
+  --elevated: #3a404d;
+  --border: #454c59;
   --text: #e5e9ec;
   --muted: #8993a1;
   --accent: #1fb39a;
   --accent-ink: #06231a;
   --fav: #57c2c9;
   --danger: #d9667c;
-  --neu-light: #333a42;
-  --neu-dark: #171a1e;
+  --neu-light: #404855;
+  --neu-dark: #242831;
   --app-width: 900px;
   --gutter: 4.8rem;
   --cell-size: 58px;
@@ -32,41 +32,43 @@
 
   /* attribute-group colors: shared by grid cells and the block picker swatch.
      Aurora (glowing teal/green/blue/violet) mixed with earthy tones
-     (ochre/tan/umber) instead of the old bright/pastel mix. */
-  --grp-letter: #c9a66b;
-  --grp-mark: #7d6a9e;
-  --grp-number: #4fa88a;
-  --grp-punct: #a98467;
-  --grp-symbol: #4c8aa8;
-  --grp-emoji: #3fae8a;
-  --grp-separator: #b08968;
-  --grp-control: #5c4a3a;
-  --grp-format: #8c7a6b;
-  --grp-surrogate: #6f5a9e;
-  --grp-private: #c98a3e;
-  --grp-unassigned: #6b6b5f;
+     (ochre/tan/umber), brightened from the original mix for readability
+     while keeping the same calm, harmonious hue families. */
+  --grp-letter: #d9bc8a;
+  --grp-mark: #9483b8;
+  --grp-number: #63c2a1;
+  --grp-punct: #c09b7d;
+  --grp-symbol: #63a4c2;
+  --grp-emoji: #55c7a1;
+  --grp-separator: #c9a17e;
+  --grp-control: #7d6753;
+  --grp-format: #a4917f;
+  --grp-surrogate: #8874b8;
+  --grp-private: #dba158;
+  --grp-unassigned: #858575;
 
   /* age-era colors (chronological gradient): shared by grid cells and the
      block picker swatch when color mode = "age". 17 stops now (see ERAS in
      data.js) -- one per major version from 7.0 on. Sepia/earthy at the old
-     end, shifting into aurora teal/blue/violet toward the present. */
-  --era-e1: #6e5638;
-  --era-e2: #7d6140;
-  --era-e3: #8b6b47;
-  --era-e4: #9c7a50;
-  --era-e5: #ac8a5c;
-  --era-e6: #a89457;
-  --era-e7: #8a9a5b;
-  --era-e8: #5fa383;
-  --era-e9: #4a9a8f;
-  --era-e10: #3f8fa0;
-  --era-e11: #4779a8;
-  --era-e12: #5a6bb0;
-  --era-e13: #6f5fae;
-  --era-e14: #7d5aa6;
-  --era-e15: #8f5a9e;
-  --era-e16: #4a8f7a;
-  --era-e17: #5a9ac2;
+     end, shifting into aurora teal/blue/violet toward the present;
+     brightened the same way as the group colors above. */
+  --era-e1: #8a7050;
+  --era-e2: #987a58;
+  --era-e3: #a68061;
+  --era-e4: #b8926a;
+  --era-e5: #c7a276;
+  --era-e6: #c2ac71;
+  --era-e7: #a3b476;
+  --era-e8: #78ba9c;
+  --era-e9: #63b3a8;
+  --era-e10: #58a8b9;
+  --era-e11: #6091c0;
+  --era-e12: #7383c7;
+  --era-e13: #8878c6;
+  --era-e14: #9673bf;
+  --era-e15: #a874b7;
+  --era-e16: #63a893;
+  --era-e17: #73b3d8;
 }
 
 /* Noto stack: lists many script-specific Noto families so the browser falls
@@ -155,19 +157,19 @@
    explicit choice always wins over the OS setting; the media query above
    still governs the very first paint before any localStorage choice exists. */
 :root[data-theme="dark"] {
-  --bg: #262b31;
+  --bg: #333944;
   --panel: var(--bg);
-  --panel-2: #22262c;
-  --elevated: #2d323a;
-  --border: #383e46;
+  --panel-2: #2f343f;
+  --elevated: #3a404d;
+  --border: #454c59;
   --text: #e5e9ec;
   --muted: #8993a1;
   --accent: #1fb39a;
   --accent-ink: #06231a;
   --fav: #57c2c9;
   --danger: #d9667c;
-  --neu-light: #333a42;
-  --neu-dark: #171a1e;
+  --neu-light: #404855;
+  --neu-dark: #242831;
 }
 
 :root[data-theme="light"] {
@@ -873,23 +875,28 @@ button {
 .block-sidebar-tabs {
   flex: none;
   display: flex;
-  border-bottom: 1px solid var(--border);
+  gap: 6px;
+  padding: 6px;
 }
 
+/* Neumorphic toggle instead of an underline: inactive tabs sit raised (like
+   any other button), the active one reads as pressed/recessed in. */
 .block-sidebar-tab {
   flex: 1;
   padding: 6px;
   border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
+  border-radius: 8px;
+  background: var(--panel-2);
   color: var(--muted);
   font-size: .8rem;
+  box-shadow: 2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light);
+  transition: box-shadow .12s, color .12s;
 }
 
 .block-sidebar-tab.active {
   color: var(--text);
-  border-bottom-color: var(--accent);
   font-weight: 600;
+  box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light);
 }
 
 .block-sidebar-empty {
@@ -2605,8 +2612,12 @@ button {
     width: min(86vw, 330px);
     padding-top: 44px;
     background: var(--bg);
-    box-shadow: 0 0 40px rgba(0, 0, 0, .5);
-    transition: transform .25s ease;
+    /* No shadow while closed -- it's a symmetric 0 0 40px blur, so even
+       fully translated off-screen it still bled 40px back into the visible
+       viewport, darkening both screen edges. Only shown once open (below),
+       when the drawer is actually meant to look raised above the page. */
+    box-shadow: none;
+    transition: transform .25s ease, box-shadow .25s ease;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -2624,7 +2635,10 @@ button {
   }
 
   .menu-left.open,
-  .menu-right.open { transform: translateX(0); }
+  .menu-right.open {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0, 0, 0, .5);
+  }
 
   .drawer-backdrop {
     display: block;
@@ -2811,6 +2825,13 @@ button {
   border-color: transparent;
   box-shadow: 3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light);
   transition: box-shadow .12s, transform .05s, background .12s, color .12s;
+}
+
+/* Left menu's legend is just a static reference list (unlike the block
+   picker's, which is clickable and uses the shadow as a button affordance)
+   -- no shadow needed here. */
+#attr-legend .legend-item {
+  box-shadow: none;
 }
 
 /* Mobile top-bar buttons (hamburger menu triggers etc.) get the same raised
