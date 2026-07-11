@@ -1919,7 +1919,9 @@ button {
   width: 100%;
   break-inside: avoid;
   margin-bottom: 10px;
-  min-height: 90px;
+  /* 1 title line + 1 preview line + padding/border, not the old flat 90px
+     (which left tall empty space under short/single-character pieces). */
+  min-height: 59px;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -2370,22 +2372,23 @@ button {
     display: inline-flex;
   }
 
-  /* Tiles: ~2 lines tall instead of ~3 (min-height), and tile-to-tile
-     spacing halved -- with the vertical (margin-bottom) and horizontal
-     (column-gap) gaps now matching, instead of the desktop 10px/10px which
-     happened to already be equal but is halved here regardless.
-     column-count:1 forces a single vertical stack -- at some mobile widths
-     (~350-400px) the desktop column-width:170px hint let the browser split
-     into 2 narrow columns, which made tiles land in an alternating
-     left/right order (tile 1 in column 1, tile 2 in column 2, tile 3 back
-     in column 1...) instead of reading top-to-bottom. */
+  /* Tile-to-tile spacing halved -- with the vertical (margin-bottom) and
+     horizontal (column-gap) gaps now matching, instead of the desktop
+     10px/10px which happened to already be equal but is halved here
+     regardless.
+     column-count:2 (deterministic) instead of the desktop's column-width
+     hint -- letting the browser pick a column count from column-width alone
+     was what previously caused tiles to land in an alternating left/right
+     order at some in-between mobile widths (~350-400px), since the browser
+     could end up choosing either 1 or 2 columns depending on exact width.
+     column-width:auto here means count:2 is the only thing deciding it. */
   .art-grid {
-    column-count: 1;
+    column-count: 2;
+    column-width: auto;
     column-gap: 5px;
   }
 
   .art-tile {
-    min-height: 54px;
     margin-bottom: 5px;
   }
 
@@ -2819,7 +2822,6 @@ button {
 .nav-next,
 .modal-close,
 .drawer-close,
-.art-tile,
 .block-item,
 .legend-item:not(.legend-none) {
   border-color: transparent;

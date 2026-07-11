@@ -218,13 +218,15 @@ class Grid {
 
   menuItems(cp, x, y) {
     const label = this.fav.activeLabel || 'マイリスト';
+    // No "符号表" entry here -- this menu is the 符号表 grid's own
+    // right-click menu, so jumping to itself would be redundant.
     return [
+      { label: '詳細を表示', onClick: () => this.onDetail(cp) },
       { label: 'マイリストへ追加…', onClick: () => this.onAddMenu && this.onAddMenu(cp, x, y) },
       {
         label: this.fav.has(cp) ? `${label}から外す` : `${label}に追加`,
         onClick: () => this.fav.toggle(cp),
       },
-      { label: '詳細を表示', onClick: () => this.onDetail(cp) },
     ];
   }
 

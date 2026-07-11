@@ -22,7 +22,7 @@
        font mode is active AND a matching glyph is actually rendered. -->
   <link rel="stylesheet" href="css/fonts-extended.css">
   <!-- apply the saved glyph font before first paint to avoid a flash -->
-  <script>try { var f = localStorage.getItem('unicode-app:font:v1'); if (f) document.documentElement.dataset.font = f; } catch (e) { }</script>
+  <script>try { var f = localStorage.getItem('unicode-app:font:v1'); document.documentElement.dataset.font = f || 'extended'; } catch (e) { }</script>
   <!-- apply the saved light/dark theme before first paint to avoid a flash;
        absent = follow the OS (see the prefers-color-scheme media query in
        css/styles.css) -->

@@ -270,16 +270,19 @@ async function main() {
 
   bindCharBoard(currentBoard, insert, (cp, x, y) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
+    { label: '符号表', onClick: () => revealInAll(cp) },
     { label: 'マイリストへ追加…', onClick: () => openMyListMenu(cp, x, y) },
   ]);
   bindCharBoard(favBoard, insert, (cp) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
+    { label: '符号表', onClick: () => revealInAll(cp) },
     { label: '← 前へ移動', onClick: () => mylists.move(cp, -1) },
     { label: '次へ移動 →', onClick: () => mylists.move(cp, 1) },
     { label: `${mylists.activeList.icon} ${mylists.activeList.name}から外す`, onClick: () => mylists.remove(cp) },
   ]);
   bindCharBoard(histBoard, insert, (cp, x, y) => [
     { label: '詳細を表示', onClick: () => modal.open(cp) },
+    { label: '符号表', onClick: () => revealInAll(cp) },
     { label: 'マイリストへ追加…', onClick: () => openMyListMenu(cp, x, y) },
     { label: '履歴から削除', onClick: () => history.remove(cp) },
   ]);
@@ -559,7 +562,7 @@ function setupFontToggle() {
   const KEY = 'unicode-app:font:v1';
   const FONTS = ['system', 'noto', 'extended'];
   const opts = document.querySelectorAll('.font-opt');
-  const cur = () => FONTS.includes(document.documentElement.dataset.font) ? document.documentElement.dataset.font : 'system';
+  const cur = () => FONTS.includes(document.documentElement.dataset.font) ? document.documentElement.dataset.font : 'extended';
   const apply = (font) => {
     document.documentElement.dataset.font = font;
     try { localStorage.setItem(KEY, font); } catch { /* ignore */ }
