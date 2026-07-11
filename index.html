@@ -15,6 +15,10 @@
   <link rel="stylesheet" href="css/fonts-extended.css">
   <!-- apply the saved glyph font before first paint to avoid a flash -->
   <script>try { var f = localStorage.getItem('unicode-app:font:v1'); if (f) document.documentElement.dataset.font = f; } catch (e) { }</script>
+  <!-- apply the saved light/dark theme before first paint to avoid a flash;
+       absent = follow the OS (see the prefers-color-scheme media query in
+       css/styles.css) -->
+  <script>try { var t = localStorage.getItem('unicode-app:theme:v1'); if (t) document.documentElement.dataset.theme = t; } catch (e) { }</script>
 </head>
 
 <body>
@@ -50,6 +54,11 @@
         <h1 class="site-title">Unicodepod Keyboard</h1>
       </header>
       <main class="menu-left-main">
+        <div class="theme-toggle" role="group" aria-label="配色テーマ">
+          <span class="font-label">テーマ</span>
+          <button type="button" class="theme-opt" data-theme-opt="dark">ダーク</button>
+          <button type="button" class="theme-opt" data-theme-opt="light">ライト</button>
+        </div>
         <div class="font-toggle" role="group" aria-label="表示フォント">
           <span class="font-label">フォント</span>
           <button type="button" class="font-opt" data-font="system">システム</button>

@@ -1,15 +1,24 @@
 :root {
-  --bg: #1d2024;
+  /* ---------- 2020s soft-UI neumorphism, cool-toned, emerald accent.
+     --neu-light/--neu-dark are the two shadow tones a raised/recessed
+     surface is carved out of --bg with (see the neumorphism pass near the
+     end of this file). Dark is the default look; @media
+     (prefers-color-scheme: light) below auto-switches for light-OS users,
+     and an explicit [data-theme="light"/"dark"] (see js/app.js
+     setupThemeToggle) always wins over both when the user picks one. ---------- */
+  --bg: #1a1d22;
   --panel: var(--bg);
-  --panel-2: #1c2029;
-  --elevated: #222736;
-  --border: #2a2f3a;
-  --text: #e6e8ee;
-  --muted: #8b92a3;
-  --accent: #4cb8d2;
-  --accent-ink: #0b1220;
-  --fav: #ffcf5c;
-  --danger: #f87171;
+  --panel-2: #181b20;
+  --elevated: #20242a;
+  --border: #2a2f36;
+  --text: #e5e9ec;
+  --muted: #8993a1;
+  --accent: #16a877;
+  --accent-ink: #06231a;
+  --fav: #57c2c9;
+  --danger: #d9667c;
+  --neu-light: #262b31;
+  --neu-dark: #101216;
   --app-width: 900px;
   --gutter: 4.8rem;
   --cell-size: 58px;
@@ -121,17 +130,57 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f5f6f8;
-    --panel: #ffffff;
-    --panel-2: #f0f2f6;
-    --elevated: #ffffff;
-    --border: #d8dce4;
-    --text: #1a1d24;
-    --muted: #616675;
-    --accent: #2f6fed;
+    --bg: #e9edf0;
+    --panel: var(--bg);
+    --panel-2: #e1e6ea;
+    --elevated: #f5f7f9;
+    --border: #d2d9dd;
+    --text: #20242a;
+    --muted: #626b74;
+    --accent: #0e9a6d;
     --accent-ink: #ffffff;
-    --fav: #d99a00;
+    --fav: #2f96a0;
+    --danger: #c14c66;
+    --neu-light: #ffffff;
+    --neu-dark: #c3cbd0;
   }
+}
+
+/* Explicit theme override (js/app.js setupThemeToggle + the pre-paint
+   <script> in index.html's <head>). An attribute selector on :root beats
+   the media-query-wrapped :root above regardless of source order, so an
+   explicit choice always wins over the OS setting; the media query above
+   still governs the very first paint before any localStorage choice exists. */
+:root[data-theme="dark"] {
+  --bg: #1a1d22;
+  --panel: var(--bg);
+  --panel-2: #181b20;
+  --elevated: #20242a;
+  --border: #2a2f36;
+  --text: #e5e9ec;
+  --muted: #8993a1;
+  --accent: #16a877;
+  --accent-ink: #06231a;
+  --fav: #57c2c9;
+  --danger: #d9667c;
+  --neu-light: #262b31;
+  --neu-dark: #101216;
+}
+
+:root[data-theme="light"] {
+  --bg: #e9edf0;
+  --panel: var(--bg);
+  --panel-2: #e1e6ea;
+  --elevated: #f5f7f9;
+  --border: #d2d9dd;
+  --text: #20242a;
+  --muted: #626b74;
+  --accent: #0e9a6d;
+  --accent-ink: #ffffff;
+  --fav: #2f96a0;
+  --danger: #c14c66;
+  --neu-light: #ffffff;
+  --neu-dark: #c3cbd0;
 }
 
 * {
@@ -411,6 +460,7 @@ button {
    align-self:stretch overrides .menu-left's align-items:center (which would
    otherwise shrink-wrap and center this box), so its left padding lines up
    with .attr-legend's -- both spanning the same full-width box. */
+.theme-toggle,
 .font-toggle {
   /* 上: 4px、右: clamp(...)、下: 2px（ここを狭く）、左: clamp(...) */
   padding: 4px clamp(10px, 3vw, 20px) 0 clamp(10px, 3vw, 20px);
@@ -443,6 +493,7 @@ button {
   flex: none;
 }
 
+.theme-opt,
 .font-opt,
 .colormode-opt,
 .fav-highlight-opt {
@@ -454,6 +505,7 @@ button {
   font-size: .8rem;
 }
 
+.theme-opt.active,
 .font-opt.active,
 .colormode-opt.active,
 .fav-highlight-opt.active {
@@ -2662,4 +2714,90 @@ button {
     scroll-behavior: auto !important;
     transition: none !important;
   }
+}
+
+/* ==========================================================================
+   Neumorphism pass: every raised-looking surface is carved out of the flat
+   --bg/--panel behind it via a paired light/dark shadow
+   (--neu-light/--neu-dark, themed per light/dark mode above) instead of a
+   border. Text-entry-like elements get the same shadow pair inverted, so
+   they read as pressed into the surface rather than sitting on top of it.
+   ========================================================================== */
+
+.site-icon,
+.btn,
+.block-btn,
+.jump,
+.mode-tab,
+.theme-opt,
+.font-opt,
+.colormode-opt,
+.fav-highlight-opt,
+.mylist-select,
+.block-search,
+.plane-jump-btn,
+.block-pop-close,
+.block-search-clear,
+.clear-circle-btn,
+.nav-prev,
+.nav-next,
+.modal-close,
+.mobile-bar-btn,
+.drawer-close,
+.art-tile,
+.block-item,
+.legend-item:not(.legend-none) {
+  border-color: transparent;
+  box-shadow: 6px 6px 13px var(--neu-dark), -6px -6px 13px var(--neu-light);
+  transition: box-shadow .12s, transform .05s, background .12s, color .12s;
+}
+
+/* recessed / pressed surfaces: the shadow direction flips inward so the
+   element reads as carved-in rather than raised. Comes after the raised
+   rule above on purpose -- .jump/.block-search/.mylist-select are meant to
+   look like input wells, not buttons, so the recessed shadow (later in
+   source order) wins for them. */
+#output,
+.art-edit-textarea,
+.block-search,
+.jump,
+.mylist-select,
+.block-sidebar,
+.fav-board,
+.attr-legend,
+.block-legend {
+  box-shadow: inset 4px 4px 9px var(--neu-dark), inset -4px -4px 9px var(--neu-light);
+}
+
+.btn:hover,
+.block-btn:hover,
+.mode-tab:hover,
+.plane-jump-btn:hover {
+  box-shadow: 8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light);
+}
+
+.btn:active,
+.mode-tab.active,
+.font-opt.active,
+.colormode-opt.active,
+.fav-highlight-opt.active,
+.theme-opt.active,
+.block-item.active {
+  box-shadow: inset 4px 4px 9px var(--neu-dark), inset -4px -4px 9px var(--neu-light);
+  transform: none;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* floating overlays (modal/menu/toast/block-picker) get a bigger, softer
+   raised shadow -- they sit above the flat page, not carved into it */
+.modal-box,
+.block-pop-box,
+.ctx-menu,
+.toast {
+  border-color: transparent;
+  box-shadow: 11px 11px 26px var(--neu-dark), -11px -11px 26px var(--neu-light);
 }

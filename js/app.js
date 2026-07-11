@@ -468,6 +468,7 @@ async function main() {
 
   // ---- font toggle (system glyphs vs installed Noto fonts) --------------
   setupFontToggle();
+  setupThemeToggle();
 
   // ---- mobile drawers (left = settings, right = block picker) ------------
   closeMobileDrawers = setupMobileDrawers();
@@ -566,6 +567,30 @@ function setupFontToggle() {
   };
   opts.forEach((o) => o.addEventListener('click', () => apply(o.dataset.font)));
   apply(cur());
+}
+
+// Light/dark theme switch (see the [data-theme] rules in css/styles.css and
+// the pre-paint <script> in index.html's <head>). Unlike setupFontToggle,
+// an unset choice isn't forced to one value -- it just follows the OS via
+// prefers-color-scheme until the user actually picks a button, at which
+// point that pick is saved and always wins.
+function setupThemeToggle() {
+  const KEY = 'unicode-app:theme:v1';
+  const THEMES = ['light', 'dark'];
+  const opts = document.querySelectorAll('.theme-opt');
+  const stored = () => THEMES.includes(document.documentElement.dataset.theme) ? document.documentElement.dataset.theme : null;
+  const systemTheme = () => (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  const render = () => {
+    const theme = stored() || systemTheme();
+    opts.forEach((o) => o.classList.toggle('active', o.dataset.themeOpt === theme));
+  };
+  const apply = (theme) => {
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem(KEY, theme); } catch { /* ignore */ }
+    render();
+  };
+  opts.forEach((o) => o.addEventListener('click', () => apply(o.dataset.themeOpt)));
+  render();
 }
 
 // OFF/ON toggle for お気に入り強調 (see favhighlight.js) -- same button-group
