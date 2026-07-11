@@ -256,6 +256,12 @@ button {
 }
 
 .menu-left-main {
+  /* flex column (not just block flow) so the vertical margins on
+     .theme-toggle/.font-toggle/.fav-highlight-toggle below don't collapse
+     into each other -- each group's margin should add to its neighbor's,
+     not just take the larger of the two. */
+  display: flex;
+  flex-direction: column;
   padding-left: 1rem;
 }
 
@@ -311,7 +317,6 @@ button {
   flex: none;
   padding: 12px clamp(10px, 3vw, 20px);
   background: var(--panel);
-  border-bottom: 1px solid var(--border);
 }
 
 .clear-circle-btn {
@@ -319,8 +324,8 @@ button {
   top: 20px;
   right: clamp(18px, 3vw, 28px);
   z-index: 1;
-  width: 26px;
-  height: 26px;
+  width: 21px;
+  height: 21px;
   border-radius: 50%;
   border: none;
   background: color-mix(in srgb, var(--elevated) 65%, transparent);
@@ -358,7 +363,8 @@ button {
   background: var(--panel-2);
   color: var(--text);
   font-family: var(--font-glyph);
-  font-size: 1.15rem;
+  /* ~70% of the old 1.15rem */
+  font-size: .8rem;
   line-height: 1.6;
 }
 
@@ -398,7 +404,7 @@ button {
 
 .btn-group {
   display: flex;
-  gap: 6px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -409,17 +415,13 @@ button {
 }
 
 .btn {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 9px;
   background: var(--elevated);
   color: var(--text);
   line-height: 1;
   transition: background .12s, border-color .12s, transform .05s;
-}
-
-.btn:hover {
-  border-color: var(--accent);
 }
 
 .btn:active {
@@ -445,18 +447,29 @@ button {
   flex: none;
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: 8px;
   padding: 8px clamp(10px, 3vw, 20px) 0;
   background: var(--panel);
 }
 
 .mode-tab {
-  padding: 8px 16px;
+  padding: 6px 13px;
   border: 1px solid var(--border);
   border-bottom: none;
   border-radius: 10px 10px 0 0;
   background: var(--panel-2);
   color: var(--muted);
+  /* Custom shadow (not the shared neumorphism-pass rule below, which this
+     class is excluded from): horizontal-only, no vertical/bottom component,
+     so the tab reads as flowing continuously down into the panel beneath it
+     instead of having a shadow seam cutting across its bottom edge. */
+  border-color: transparent;
+  box-shadow: 3px 0 5px -1px var(--neu-dark), -3px 0 5px -1px var(--neu-light);
+  transition: box-shadow .12s, transform .05s, background .12s, color .12s;
+}
+
+.mode-tab:hover {
+  box-shadow: 4px 0 6px -1px var(--neu-dark), -4px 0 6px -1px var(--neu-light);
 }
 
 /* bottom of the left menu zone (pushed down via margin-top:auto).
@@ -464,18 +477,20 @@ button {
    otherwise shrink-wrap and center this box), so its left padding lines up
    with .attr-legend's -- both spanning the same full-width box. */
 .theme-toggle,
-.font-toggle {
-  /* 上: 4px、右: clamp(...)、下: 2px（ここを狭く）、左: clamp(...) */
-  padding: 4px clamp(10px, 3vw, 20px) 0 clamp(10px, 3vw, 20px);
-}
-
-/* Sits between .font-toggle and .attr-legend with no spacing of its own
-   otherwise -- add breathing room + a divider on both sides so it doesn't
-   crowd its neighbors. */
+.font-toggle,
 .fav-highlight-toggle {
-  padding: 8px clamp(10px, 3vw, 20px);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  /* Explicit flex+gap instead of relying on inline-button whitespace, so the
+     spacing between buttons is controlled and consistent (and can be widened
+     without depending on markup whitespace). Vertical spacing between these
+     three groups is margin (not padding) -- flex items never collapse
+     margins, so each group's own top+bottom margin stacks with its
+     neighbor's, keeping their raised shadows from crowding each other. */
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 clamp(10px, 3vw, 20px);
+  margin: 12px 0;
 }
 
 .meta-description {
@@ -500,12 +515,23 @@ button {
 .font-opt,
 .colormode-opt,
 .fav-highlight-opt {
-  padding: 5px 10px;
+  padding: 4px 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--panel-2);
   color: var(--muted);
   font-size: .8rem;
+}
+
+.theme-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.theme-opt-icon {
+  font-size: .9em;
+  line-height: 1;
 }
 
 .theme-opt.active,
@@ -522,6 +548,10 @@ button {
   background: var(--bg);
   color: var(--text);
   font-weight: 600;
+  /* Flush with the panel below (same background, no border-bottom, and now
+     no shadow either) -- reads as one continuous surface instead of a tab
+     sitting on top of it. */
+  box-shadow: none;
 }
 
 .panel {
@@ -552,7 +582,7 @@ button {
   gap: 8px;
   min-width: 0;
   flex: 1 1 auto;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border: 1px solid var(--border);
   border-radius: 9px;
   background: var(--elevated);
@@ -593,7 +623,6 @@ button {
   flex: none;
   padding: 10px clamp(10px, 3vw, 20px);
   background: var(--panel);
-  border-bottom: 1px solid var(--border);
 }
 
 .jump {
@@ -654,7 +683,7 @@ button {
   background: transparent;
   color: var(--accent);
   font-size: 1.05rem;
-  padding: 4px 6px;
+  padding: 3px 5px;
   border-radius: 6px;
 }
 
@@ -696,7 +725,7 @@ button {
   display: flex;
   flex-direction: column;
   width: min(96vw, var(--app-width));
-  height: min(70vh, 70dvh);
+  height: min(90vh, 90dvh);
   background: var(--elevated);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -713,8 +742,8 @@ button {
 
 .block-pop-close {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 27px;
+  height: 27px;
   border: 1px solid var(--border);
   border-radius: 50%;
   background: var(--panel-2);
@@ -722,19 +751,15 @@ button {
   font-size: 1rem;
 }
 
-.block-pop-close:hover {
-  border-color: var(--accent);
-}
-
 .plane-jump {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
 }
 
 .plane-jump-btn {
-  padding: 4px 9px;
+  padding: 3px 7px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--panel-2);
@@ -743,7 +768,6 @@ button {
 }
 
 .plane-jump-btn:hover {
-  border-color: var(--accent);
   color: var(--text);
 }
 
@@ -772,8 +796,8 @@ button {
   top: 50%;
   right: 6px;
   transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -792,7 +816,7 @@ button {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 8px 12px;
+  gap: 16px 24px;
   margin: 0 8px 8px;
   padding: 8px 10px;
   border: 1px solid var(--border);
@@ -807,7 +831,7 @@ button {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 8px 14px;
+  gap: 16px 28px;
   padding: 6px clamp(10px, 3vw, 20px);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
@@ -825,7 +849,6 @@ button {
 .menu-left .colormode-toggle {
   border-left: none;
   padding-left: 0;
-  border-top: 1px solid var(--border);
   padding-top: 6px;
 }
 
@@ -855,7 +878,7 @@ button {
 
 .block-sidebar-tab {
   flex: 1;
-  padding: 8px;
+  padding: 6px;
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
@@ -902,10 +925,9 @@ button {
 .colormode-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   white-space: nowrap;
   padding-left: 10px;
-  border-left: 1px solid var(--border);
 }
 
 .colormode-label {
@@ -919,7 +941,7 @@ button {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 /* only the block picker modal keeps the legend horizontal (wraps across
@@ -928,13 +950,14 @@ button {
 .block-pop-box .legend-items {
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 6px 12px;
+  gap: 12px 24px;
 }
 
 /* fixed width per item so wrapped rows line up into neat columns instead of
-   each item's width following its (Japanese vs. English) label length */
+   each item's width following its (Japanese vs. English) label length.
+   Widened from 128px now that ja/en sit on one row instead of stacked. */
 .block-pop-box .legend-item {
-  width: 128px;
+  width: 148px;
   flex: none;
 }
 
@@ -962,10 +985,15 @@ button {
   flex: 1;
 }
 
-.block-pop-box .legend-ja,
-.block-pop-box .legend-en {
+.block-pop-box .legend-ja {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.block-pop-box .legend-en {
+  flex: none;
   white-space: nowrap;
 }
 
@@ -981,19 +1009,29 @@ button {
   font-style: italic;
 }
 
-/* legend items: English stacked below the Japanese, both small */
+/* legend items: English shown small to the right of the Japanese, on the
+   same line -- saves vertical space over the old stacked layout, which
+   mattered more once items got wider gaps (see block-legend/attr-legend
+   above). */
 .legend-label {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
   line-height: 1.2;
 }
 
 .legend-label .legend-ja {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: .72rem;
 }
 
 .legend-label .legend-en {
-  display: block;
+  flex: none;
   font-size: .62rem;
 }
 
@@ -1748,7 +1786,7 @@ button {
 
 .mylist-actions {
   display: flex;
-  gap: 8px;
+  gap: 16px;
   flex: none;
 }
 
@@ -1789,7 +1827,7 @@ button {
 }
 
 .btn.small {
-  padding: 5px 10px;
+  padding: 4px 8px;
   font-size: .8rem;
 }
 
@@ -2003,8 +2041,8 @@ button {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border: none;
   border-radius: 8px;
   background: var(--panel-2);
@@ -2019,14 +2057,14 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 24px;
   margin: 24px 0 36px;
 }
 
 .nav-prev,
 .nav-next {
-  width: 44px;
-  height: 44px;
+  width: 35px;
+  height: 35px;
   flex: none;
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -2034,11 +2072,6 @@ button {
   color: var(--text);
   font-size: 1.4rem;
   line-height: 1;
-}
-
-.nav-prev:hover,
-.nav-next:hover {
-  border-color: var(--accent);
 }
 
 .modal-glyph {
@@ -2100,7 +2133,7 @@ button {
 
 .modal-actions {
   display: flex;
-  gap: 8px;
+  gap: 16px;
   margin: 8px;
   font-size: .8rem;
 }
@@ -2142,13 +2175,13 @@ button {
 
 .modal-actions .btn {
   flex: 1;
-  padding: 8px;
+  padding: 6px;
 }
 
 .fav-btn {
   flex: none;
-  width: 42px;
-  padding: 8px 0;
+  width: 34px;
+  padding: 6px 0;
   font-size: 1.1rem;
   color: var(--muted);
 }
@@ -2207,8 +2240,8 @@ button {
   }
 
   .mobile-bar-btn {
-    width: 42px;
-    height: 42px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2222,7 +2255,7 @@ button {
 
   .mobile-bar-btn:active { transform: translateY(1px); }
 
-  /* Left has 1 button (42px), right has 2 (42px*2 + gap = 92px) -- unequal,
+  /* Left has 1 button (34px), right has 2 (34px*2 + gap = 80px) -- unequal,
      which pushed the flex:1 center content off true page-center (it lands
      centered between the two side groups, not the screen). Reserve equal
      width on both sides -- flush to their own screen edge -- so the center
@@ -2231,8 +2264,8 @@ button {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-width: calc(42px * 2 + 8px);
+    gap: 12px;
+    min-width: calc(34px * 2 + 12px);
   }
 
   .mobile-bar-side-left {
@@ -2333,8 +2366,14 @@ button {
   /* Tiles: ~2 lines tall instead of ~3 (min-height), and tile-to-tile
      spacing halved -- with the vertical (margin-bottom) and horizontal
      (column-gap) gaps now matching, instead of the desktop 10px/10px which
-     happened to already be equal but is halved here regardless. */
+     happened to already be equal but is halved here regardless.
+     column-count:1 forces a single vertical stack -- at some mobile widths
+     (~350-400px) the desktop column-width:170px hint let the browser split
+     into 2 narrow columns, which made tiles land in an alternating
+     left/right order (tile 1 in column 1, tile 2 in column 2, tile 3 back
+     in column 1...) instead of reading top-to-bottom. */
   .art-grid {
+    column-count: 1;
     column-gap: 5px;
   }
 
@@ -2343,17 +2382,24 @@ button {
     margin-bottom: 5px;
   }
 
+  /* Fixed-size buttons (not flex:1-stretched) spread evenly across the full
+     row width via justify-content:space-between -- always exactly one row
+     (nowrap), with the leftover space becoming the gaps between buttons
+     rather than a fixed gap value, so it stays flush edge-to-edge on any
+     screen width. */
   .output-bar .btn-group {
     flex: 1 1 100%;
     flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 4px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
   }
 
   .output-bar .btn-group .btn {
-    flex: 1 1 0;
-    min-width: 0;
-    aspect-ratio: 1 / 1;
+    /* 1.2x the previous 25px frame, font-size unchanged (still 1.15rem below) */
+    flex: none;
+    width: 30px;
+    height: 30px;
     padding: 0;
     display: flex;
     align-items: center;
@@ -2361,9 +2407,14 @@ button {
     font-size: 1.15rem;
   }
 
-  /* output text shrunk to ~70% */
+  /* ~80% of the (already-shrunk) desktop .8rem. The HTML rows="8" attribute
+     (see index.html) gives desktop +5 rows over the old rows=3 baseline;
+     mobile only wants +2, so height is set explicitly here to override the
+     shared rows attribute -- 5 rows' worth at this breakpoint's own
+     line-height/font-size (padding+border: 10px*2 + 1px*2 = 22px). */
   #output {
-    font-size: .8rem;
+    font-size: .64rem;
+    height: calc(1.6em * 5 + 22px);
   }
 
   /* Central block-picker modal: use the full site height instead of 70vh,
@@ -2588,8 +2639,8 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 38px;
-    height: 38px;
+    width: 30px;
+    height: 30px;
     border: none;
     border-radius: 50%;
     background: color-mix(in srgb, var(--elevated) 70%, transparent);
@@ -2652,8 +2703,8 @@ button {
   .modal-close {
     top: 6px;
     right: 6px;
-    width: 36px;
-    height: 36px;
+    width: 29px;
+    height: 29px;
     font-size: 1.12rem;
     border-radius: 50%;
     background: #1a1d24;
@@ -2731,7 +2782,6 @@ button {
 .btn,
 .block-btn,
 .jump,
-.mode-tab,
 .theme-opt,
 .font-opt,
 .colormode-opt,
@@ -2745,11 +2795,19 @@ button {
 .nav-prev,
 .nav-next,
 .modal-close,
-.mobile-bar-btn,
 .drawer-close,
 .art-tile,
 .block-item,
 .legend-item:not(.legend-none) {
+  border-color: transparent;
+  box-shadow: 3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light);
+  transition: box-shadow .12s, transform .05s, background .12s, color .12s;
+}
+
+/* Mobile top-bar buttons (hamburger menu triggers etc.) get the same raised
+   neumorphic shadow as every other button, so they don't look flat/inert
+   against the bar's own background. */
+.mobile-bar-btn {
   border-color: transparent;
   box-shadow: 3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light);
   transition: box-shadow .12s, transform .05s, background .12s, color .12s;
@@ -2767,20 +2825,20 @@ button {
 .mylist-select,
 .block-sidebar,
 .fav-board,
-.attr-legend,
 .block-legend {
   box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light);
 }
 
 .btn:hover,
 .block-btn:hover,
-.mode-tab:hover,
-.plane-jump-btn:hover {
+.plane-jump-btn:hover,
+.block-pop-close:hover,
+.nav-prev:hover,
+.nav-next:hover {
   box-shadow: 4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light);
 }
 
 .btn:active,
-.mode-tab.active,
 .block-item.active {
   box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light);
   transform: none;

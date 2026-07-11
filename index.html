@@ -56,8 +56,8 @@
       <main class="menu-left-main">
         <div class="theme-toggle" role="group" aria-label="配色テーマ">
           <span class="font-label">テーマ</span>
-          <button type="button" class="theme-opt" data-theme-opt="dark">ダーク</button>
-          <button type="button" class="theme-opt" data-theme-opt="light">ライト</button>
+          <button type="button" class="theme-opt" data-theme-opt="dark"><span class="theme-opt-icon" aria-hidden="true">🌙</span>ダーク</button>
+          <button type="button" class="theme-opt" data-theme-opt="light"><span class="theme-opt-icon" aria-hidden="true">☀️</span>ライト</button>
         </div>
         <div class="font-toggle" role="group" aria-label="表示フォント">
           <span class="font-label">フォント</span>
@@ -86,7 +86,7 @@
       <section class="output-area" aria-label="出力部">
         <button type="button" id="clear-btn" class="clear-circle-btn" title="全削除">×</button>
         <div class="ta-wrap">
-          <textarea id="output" rows="3" placeholder="出力部" spellcheck="false" autocapitalize="off"
+          <textarea id="output" rows="8" placeholder="出力部" spellcheck="false" autocapitalize="off"
             autocomplete="off"></textarea>
         </div>
         <div class="output-bar">

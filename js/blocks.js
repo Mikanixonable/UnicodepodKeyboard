@@ -16,8 +16,11 @@ function legendHtmlFor(mode) {
     return '<span class="legend-item legend-none">色分けなし（No coloring）</span>';
   }
   if (mode === 'age') {
+    // Version name + year range are already combined into one string (e.g.
+    // "v1.x(1991-1993)") -- a single label, not a ja/en pair, so it fits on
+    // one line without duplicating the version number.
     return D.ERAS
-      .map((e) => `<span class="legend-item"><span class="swatch" data-group="${e.key}"></span><span class="legend-label"><span class="legend-ja">${e.ja}</span><span class="legend-en">${e.en}</span></span></span>`)
+      .map((e) => `<span class="legend-item"><span class="swatch" data-group="${e.key}"></span><span class="legend-label"><span class="legend-ja">${e.en}</span></span></span>`)
       .join('');
   }
   return Object.entries(D.GROUP_LABELS)
