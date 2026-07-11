@@ -2382,6 +2382,15 @@ button {
     margin-bottom: 5px;
   }
 
+  /* Half the shared 10px margin-top, and inset horizontally by the shadow's
+     own reach (3px offset + 6px blur = ~9px) so the shadow-inclusive visual
+     width of the button row lines up with #output's edges above it, instead
+     of the shadows bleeding past them. */
+  .output-bar {
+    margin-top: 5px;
+    padding: 0 9px;
+  }
+
   /* Fixed-size buttons (not flex:1-stretched) spread evenly across the full
      row width via justify-content:space-between -- always exactly one row
      (nowrap), with the leftover space becoming the gaps between buttons
