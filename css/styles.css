@@ -6,19 +6,19 @@
      (prefers-color-scheme: light) below auto-switches for light-OS users,
      and an explicit [data-theme="light"/"dark"] (see js/app.js
      setupThemeToggle) always wins over both when the user picks one. ---------- */
-  --bg: #1a1d22;
+  --bg: #262b31;
   --panel: var(--bg);
-  --panel-2: #181b20;
-  --elevated: #20242a;
-  --border: #2a2f36;
+  --panel-2: #22262c;
+  --elevated: #2d323a;
+  --border: #383e46;
   --text: #e5e9ec;
   --muted: #8993a1;
-  --accent: #16a877;
+  --accent: #1fb39a;
   --accent-ink: #06231a;
   --fav: #57c2c9;
   --danger: #d9667c;
-  --neu-light: #262b31;
-  --neu-dark: #101216;
+  --neu-light: #333a42;
+  --neu-dark: #171a1e;
   --app-width: 900px;
   --gutter: 4.8rem;
   --cell-size: 58px;
@@ -30,40 +30,43 @@
   --font-glyph: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     "Noto Sans", "Noto Sans CJK JP", "Noto Color Emoji", sans-serif;
 
-  /* attribute-group colors: shared by grid cells and the block picker swatch */
-  --grp-letter: #d0c8b0;
-  --grp-mark: #b5afc7;
-  --grp-number: #edf5f3;
-  --grp-punct: #8f9394;
-  --grp-symbol: #cd91b0;
-  --grp-emoji: #fb7185;
-  --grp-separator: #87bfc6;
-  --grp-control: #8c4848;
-  --grp-format: #9ca3af;
-  --grp-surrogate: #8970a1;
-  --grp-private: #eab308;
-  --grp-unassigned: #52525b;
+  /* attribute-group colors: shared by grid cells and the block picker swatch.
+     Aurora (glowing teal/green/blue/violet) mixed with earthy tones
+     (ochre/tan/umber) instead of the old bright/pastel mix. */
+  --grp-letter: #c9a66b;
+  --grp-mark: #7d6a9e;
+  --grp-number: #4fa88a;
+  --grp-punct: #a98467;
+  --grp-symbol: #4c8aa8;
+  --grp-emoji: #3fae8a;
+  --grp-separator: #b08968;
+  --grp-control: #5c4a3a;
+  --grp-format: #8c7a6b;
+  --grp-surrogate: #6f5a9e;
+  --grp-private: #c98a3e;
+  --grp-unassigned: #6b6b5f;
 
   /* age-era colors (chronological gradient): shared by grid cells and the
      block picker swatch when color mode = "age". 17 stops now (see ERAS in
-     data.js) -- one per major version from 7.0 on. */
-  --era-e1: #4c6ef5;
-  --era-e2: #4dabf7;
-  --era-e3: #22b8cf;
-  --era-e4: #38d9a9;
-  --era-e5: #51cf66;
-  --era-e6: #94d82d;
-  --era-e7: #fcc419;
-  --era-e8: #ffa94d;
-  --era-e9: #ff922b;
-  --era-e10: #ff6b6b;
-  --era-e11: #fa5252;
-  --era-e12: #f06595;
-  --era-e13: #e64980;
-  --era-e14: #cc5de8;
-  --era-e15: #9775fa;
-  --era-e16: #845ef7;
-  --era-e17: #5c7cfa;
+     data.js) -- one per major version from 7.0 on. Sepia/earthy at the old
+     end, shifting into aurora teal/blue/violet toward the present. */
+  --era-e1: #6e5638;
+  --era-e2: #7d6140;
+  --era-e3: #8b6b47;
+  --era-e4: #9c7a50;
+  --era-e5: #ac8a5c;
+  --era-e6: #a89457;
+  --era-e7: #8a9a5b;
+  --era-e8: #5fa383;
+  --era-e9: #4a9a8f;
+  --era-e10: #3f8fa0;
+  --era-e11: #4779a8;
+  --era-e12: #5a6bb0;
+  --era-e13: #6f5fae;
+  --era-e14: #7d5aa6;
+  --era-e15: #8f5a9e;
+  --era-e16: #4a8f7a;
+  --era-e17: #5a9ac2;
 }
 
 /* Noto stack: lists many script-specific Noto families so the browser falls
@@ -137,7 +140,7 @@
     --border: #d2d9dd;
     --text: #20242a;
     --muted: #626b74;
-    --accent: #0e9a6d;
+    --accent: #0f9c8a;
     --accent-ink: #ffffff;
     --fav: #2f96a0;
     --danger: #c14c66;
@@ -152,19 +155,19 @@
    explicit choice always wins over the OS setting; the media query above
    still governs the very first paint before any localStorage choice exists. */
 :root[data-theme="dark"] {
-  --bg: #1a1d22;
+  --bg: #262b31;
   --panel: var(--bg);
-  --panel-2: #181b20;
-  --elevated: #20242a;
-  --border: #2a2f36;
+  --panel-2: #22262c;
+  --elevated: #2d323a;
+  --border: #383e46;
   --text: #e5e9ec;
   --muted: #8993a1;
-  --accent: #16a877;
+  --accent: #1fb39a;
   --accent-ink: #06231a;
   --fav: #57c2c9;
   --danger: #d9667c;
-  --neu-light: #262b31;
-  --neu-dark: #101216;
+  --neu-light: #333a42;
+  --neu-dark: #171a1e;
 }
 
 :root[data-theme="light"] {
@@ -175,7 +178,7 @@
   --border: #d2d9dd;
   --text: #20242a;
   --muted: #626b74;
-  --accent: #0e9a6d;
+  --accent: #0f9c8a;
   --accent-ink: #ffffff;
   --fav: #2f96a0;
   --danger: #c14c66;
@@ -2748,7 +2751,7 @@ button {
 .block-item,
 .legend-item:not(.legend-none) {
   border-color: transparent;
-  box-shadow: 6px 6px 13px var(--neu-dark), -6px -6px 13px var(--neu-light);
+  box-shadow: 3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light);
   transition: box-shadow .12s, transform .05s, background .12s, color .12s;
 }
 
@@ -2766,24 +2769,32 @@ button {
 .fav-board,
 .attr-legend,
 .block-legend {
-  box-shadow: inset 4px 4px 9px var(--neu-dark), inset -4px -4px 9px var(--neu-light);
+  box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light);
 }
 
 .btn:hover,
 .block-btn:hover,
 .mode-tab:hover,
 .plane-jump-btn:hover {
-  box-shadow: 8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light);
+  box-shadow: 4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light);
 }
 
 .btn:active,
 .mode-tab.active,
+.block-item.active {
+  box-shadow: inset 2px 2px 4px var(--neu-dark), inset -2px -2px 4px var(--neu-light);
+  transform: none;
+}
+
+/* colored toggle buttons (テーマ/フォント/色分け方式/お気に入り強調) get a flat
+   accent fill instead -- the neumorphic dual-tone shadow's two
+   differently-colored corners read as a gradient running across the solid
+   color, which the left menu's flat look should avoid. */
 .font-opt.active,
 .colormode-opt.active,
 .fav-highlight-opt.active,
-.theme-opt.active,
-.block-item.active {
-  box-shadow: inset 4px 4px 9px var(--neu-dark), inset -4px -4px 9px var(--neu-light);
+.theme-opt.active {
+  box-shadow: none;
   transform: none;
 }
 
@@ -2792,12 +2803,14 @@ button {
   color: var(--accent-ink);
 }
 
-/* floating overlays (modal/menu/toast/block-picker) get a bigger, softer
-   raised shadow -- they sit above the flat page, not carved into it */
+/* floating overlays (modal/menu/toast) get a bigger, softer raised shadow --
+   they sit above the flat page, not carved into it. The block picker modal
+   is excluded: its dual-tone shadow (two differently-colored corners) read
+   as a gradient running around the edge, so it keeps its own flat solid
+   border + plain drop shadow instead (see .block-pop-box above). */
 .modal-box,
-.block-pop-box,
 .ctx-menu,
 .toast {
   border-color: transparent;
-  box-shadow: 11px 11px 26px var(--neu-dark), -11px -11px 26px var(--neu-light);
+  box-shadow: 6px 6px 13px var(--neu-dark), -6px -6px 13px var(--neu-light);
 }
