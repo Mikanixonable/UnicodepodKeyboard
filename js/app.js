@@ -16,6 +16,7 @@ const { ArtLists } = window.App.ArtLists;
 const { ArtPatterns, sanitizeName: sanitizePatternName } = window.App.ArtPatterns;
 const PatternEngine = window.App.ArtPatterns.Engine;
 const UrlState = window.App.UrlState;
+const { escapeHtml } = window.App.Util;
 
 const LONG_PRESS_MS = 450;
 const TOAST_MS = 1800;
@@ -888,15 +889,6 @@ function nextMylistName(lists) {
   return `マイリスト ${n}`;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[c]));
-}
 
 // Render a list of codepoints as a clickable keyboard (mylist / history).
 // `highlight` controls the fav-star box-shadow (see .cell.fav): callers

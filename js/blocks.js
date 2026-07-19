@@ -3,6 +3,7 @@
 (function () {
 
 const D = window.App.Data;
+const { escapeHtml } = window.App.Util;
 
 const LONG_PRESS_MS = 450;
 
@@ -598,10 +599,6 @@ class BlockHeader {
     this.pop.hidden = true;
     this.btn.setAttribute('aria-expanded', 'false');
   }
-}
-
-function escapeHtml(s) {
-  return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
 window.App.Blocks = { BlockHeader, legendHtmlFor, Legend, BlockSidebar };

@@ -4,6 +4,7 @@
 
 const D = window.App.Data;
 const { openMenu } = window.App.Menu;
+const { escapeHtml } = window.App.Util;
 
 const BUFFER = 6; // extra rows above/below viewport
 const SCROLL_KEY = 'unicode-app:scroll-cp:v1';
@@ -311,10 +312,6 @@ class Grid {
     el.classList.add('flash');
     setTimeout(() => el.classList.remove('flash'), FLASH_MS);
   }
-}
-
-function escapeHtml(s) {
-  return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
 window.App.Grid = { Grid };

@@ -5,7 +5,7 @@
 //
 // Bump CACHE_VERSION whenever any precached file changes so clients pick up
 // the new versions instead of serving stale ones from the old cache.
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `unicodepod-${CACHE_VERSION}`;
 
 // App shell: everything needed for the app to boot and be usable offline.
@@ -27,6 +27,7 @@ const PRECACHE_URLS = [
   './data/block_names_ja.js',
   './data/names.js',
   './data/descriptions.js',
+  './js/util.js',
   './js/data.js',
   './js/menu.js',
   './js/colormode.js',
