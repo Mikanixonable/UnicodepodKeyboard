@@ -17,6 +17,9 @@ const { ArtPatterns, sanitizeName: sanitizePatternName } = window.App.ArtPattern
 const PatternEngine = window.App.ArtPatterns.Engine;
 const UrlState = window.App.UrlState;
 
+const LONG_PRESS_MS = 450;
+const TOAST_MS = 1800;
+
 async function main() {
   await D.loadCore();
 
@@ -29,7 +32,7 @@ async function main() {
     toastEl.textContent = msg;
     toastEl.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), TOAST_MS);
   };
 
   // ---- stores --------------------------------------------------------
@@ -987,7 +990,7 @@ function bindTileBoard(root, selector, dataKey, activate, menuItems) {
     suppress = false; xy = { x: e.clientX, y: e.clientY };
     if (e.pointerType !== 'mouse') {
       clearTimeout(timer);
-      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(id, xy.x, xy.y)); }, 450);
+      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(id, xy.x, xy.y)); }, LONG_PRESS_MS);
     }
   });
   root.addEventListener('pointermove', (e) => {
@@ -1051,7 +1054,7 @@ function bindCharBoard(root, insert, menuItems) {
     suppress = false; xy = { x: e.clientX, y: e.clientY };
     if (e.pointerType !== 'mouse') {
       clearTimeout(timer);
-      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(cp, xy.x, xy.y)); }, 450);
+      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(cp, xy.x, xy.y)); }, LONG_PRESS_MS);
     }
   });
   root.addEventListener('pointermove', (e) => {

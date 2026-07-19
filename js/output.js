@@ -7,6 +7,8 @@ const seg = (typeof Intl !== 'undefined' && Intl.Segmenter)
   : null;
 
 const TEXT_KEY = 'unicode-app:output-text:v1';
+const TYPING_IDLE_MS = 400;
+const COALESCE_MS = 400;
 
 function graphemes(str) {
   if (seg) return [...seg.segment(str)].map(s => s.segment);
@@ -38,7 +40,7 @@ class OutputArea {
       this.typing = true;
       this.caretEl.style.display = 'none';
       clearTimeout(this.typingIdleTimer);
-      this.typingIdleTimer = setTimeout(() => { this.typing = false; this.updateFakeCaret(); }, 400);
+      this.typingIdleTimer = setTimeout(() => { this.typing = false; this.updateFakeCaret(); }, TYPING_IDLE_MS);
     });
     this.ta.addEventListener('focus', () => { this.typing = true; this.updateFakeCaret(); });
     this.ta.addEventListener('blur', () => {
@@ -74,7 +76,7 @@ class OutputArea {
   onUserInput() {
     this.updateCount();
     clearTimeout(this.coalesceTimer);
-    this.coalesceTimer = setTimeout(() => this.push(), 400);
+    this.coalesceTimer = setTimeout(() => this.push(), COALESCE_MS);
   }
 
   commit() {

@@ -7,6 +7,8 @@ const { openMenu } = window.App.Menu;
 
 const BUFFER = 6; // extra rows above/below viewport
 const SCROLL_KEY = 'unicode-app:scroll-cp:v1';
+const LONG_PRESS_MS = 450;
+const FLASH_MS = 1300;
 
 class Grid {
   constructor(root, { onInsert, onDetail, onAddMenu, onReveal, mylists, colorMode, favHighlight, onTopCpChange }) {
@@ -256,7 +258,7 @@ class Grid {
         timer = setTimeout(() => {
           suppress = true;
           openMenu(downXY.x, downXY.y, this.menuItems(cp, downXY.x, downXY.y));
-        }, 450);
+        }, LONG_PRESS_MS);
       }
     });
 
@@ -307,7 +309,7 @@ class Grid {
     el.classList.remove('flash');
     void el.offsetWidth; // restart the animation
     el.classList.add('flash');
-    setTimeout(() => el.classList.remove('flash'), 1300);
+    setTimeout(() => el.classList.remove('flash'), FLASH_MS);
   }
 }
 

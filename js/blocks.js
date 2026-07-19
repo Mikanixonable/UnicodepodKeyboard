@@ -4,6 +4,8 @@
 
 const D = window.App.Data;
 
+const LONG_PRESS_MS = 450;
+
 function planeLabel(p) {
   const { ja, en } = D.planeInfo(p);
   return `第${p}面（Plane ${p}）: ${ja}（${en}）`;
@@ -129,7 +131,7 @@ function buildBlockList(listEl, mode, onItemClick, {
           timer = setTimeout(() => {
             suppress = true;
             onContextMenu(b, downXY.x, downXY.y);
-          }, 450);
+          }, LONG_PRESS_MS);
         }
       });
       li.addEventListener('pointermove', (e) => {
