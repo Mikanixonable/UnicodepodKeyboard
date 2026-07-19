@@ -150,17 +150,30 @@
         </div>
 
         <div id="panel-art" class="panel" hidden>
-          <div class="board-bar">
-            <div class="mylist-picker">
-              <select id="art-view-select" class="mylist-select"></select>
-              <button type="button" id="art-mylist-add" class="btn small">＋ 作成</button>
-              <button type="button" id="art-mylist-rename" class="btn small">名前変更</button>
-              <button type="button" id="art-mylist-delete" class="btn small danger">削除</button>
-              <button type="button" id="art-mylist-menu-btn" class="btn small">マイリスト操作</button>
-            </div>
-            <button type="button" id="save-art-btn" class="btn small">＋ 出力部を保存</button>
+          <div class="art-subtabs" role="tablist">
+            <button type="button" class="art-subtab active" data-artview="works" role="tab">作品</button>
+            <button type="button" class="art-subtab" data-artview="patterns" role="tab">パターン工房</button>
           </div>
-          <div id="art-board" class="art-board"></div>
+          <div id="art-works-view" class="art-subview">
+            <div class="board-bar">
+              <div class="mylist-picker">
+                <select id="art-view-select" class="mylist-select"></select>
+                <button type="button" id="art-mylist-add" class="btn small">＋ 作成</button>
+                <button type="button" id="art-mylist-rename" class="btn small">名前変更</button>
+                <button type="button" id="art-mylist-delete" class="btn small danger">削除</button>
+                <button type="button" id="art-mylist-menu-btn" class="btn small">マイリスト操作</button>
+              </div>
+              <button type="button" id="save-art-btn" class="btn small">＋ 出力部を保存</button>
+            </div>
+            <div id="art-board" class="art-board"></div>
+          </div>
+          <div id="art-patterns-view" class="art-subview" hidden>
+            <div class="board-bar">
+              <span class="board-hint">パターン: タップで展開して挿入 ／ 技: タップで出力部に適用</span>
+              <button type="button" id="pattern-add-btn" class="btn small">＋ 作成</button>
+            </div>
+            <div id="pattern-board" class="pattern-board"></div>
+          </div>
         </div>
       </section>
     </div>
@@ -192,6 +205,56 @@
     </div>
   </div>
 
+  <!-- パターン工房 編集モーダル -->
+  <div id="pattern-edit-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="パターンを編集">
+      <div class="modal-close-anchor">
+        <button type="button" id="pattern-edit-close" class="modal-close" aria-label="閉じる">✕</button>
+      </div>
+      <h2 class="art-edit-title" id="pattern-edit-heading">パターンを編集</h2>
+      <label class="pattern-field">
+        <span class="pattern-field-label">名前</span>
+        <input id="pattern-name-input" class="pattern-name-input" maxlength="30" spellcheck="false"
+          autocomplete="off">
+      </label>
+      <label class="pattern-field">
+        <span class="pattern-field-label">本文</span>
+        <textarea id="pattern-body-input" class="art-edit-textarea" rows="4" spellcheck="false"></textarea>
+      </label>
+      <div id="pattern-mode-row" class="pattern-mode-row" role="group" aria-label="技の適用単位">
+        <span class="pattern-field-label">技の適用単位</span>
+        <button type="button" class="pattern-mode-opt" data-pattern-mode="whole">全体</button>
+        <button type="button" class="pattern-mode-opt" data-pattern-mode="char">1文字ごと</button>
+        <button type="button" class="pattern-mode-opt" data-pattern-mode="line">行ごと</button>
+      </div>
+      <div class="pattern-preview">
+        <div class="pattern-preview-head">
+          <span class="pattern-field-label">プレビュー</span>
+          <input id="pattern-preview-sample" class="pattern-preview-sample" value="あいう" spellcheck="false"
+            autocomplete="off" aria-label="技を試す文字列">
+          <button type="button" id="pattern-reroll-btn" class="btn small">🎲 再抽選</button>
+        </div>
+        <div id="pattern-preview-out" class="pattern-preview-out"></div>
+      </div>
+      <details class="pattern-help">
+        <summary>記法ヘルプ</summary>
+        <ul>
+          <li><code>{名前}</code> … 別のパターンを展開して埋め込む。自分自身を参照すると再帰（深すぎると打ち切り）。</li>
+          <li><code>{名前*3}</code> … 3回展開する（ランダム部分は毎回抽選し直す）。</li>
+          <li><code>[あいう]</code> … 中の文字から1つをランダムに選ぶ。</li>
+          <li><code>[あいう*8]</code> … 8回選ぶ（テクスチャの生成に）。</li>
+          <li><code>[ねこ|いぬ|{顔}]</code> … <code>|</code> 区切りなら文字列単位の選択肢。</li>
+          <li><code>{_}</code> … 入力の場所。これを含むパターンは「技」になり、出力部の文字列（選択範囲があればそこ）に適用される。</li>
+          <li>再帰の例: <code>[╱╲|╱{やまなみ}╲|╱{やまなみ}╲]</code>（確率で伸びる）。当てはまらない書き方はそのまま文字になる。</li>
+        </ul>
+      </details>
+      <div class="art-edit-actions">
+        <button type="button" id="pattern-edit-save" class="btn primary">保存</button>
+      </div>
+    </div>
+  </div>
+
   <!-- コピー通知 -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -215,6 +278,7 @@
   <script src="js/history.js" defer></script>
   <script src="js/art.js" defer></script>
   <script src="js/artlists.js" defer></script>
+  <script src="js/artpatterns.js" defer></script>
   <script src="js/grid.js" defer></script>
   <script src="js/blocks.js" defer></script>
   <script src="js/modal.js" defer></script>

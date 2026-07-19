@@ -267,6 +267,8 @@ CJK 統合漢字（拡張含む）・CJK 互換漢字・ハングル音節は名
 - [js/output.js](js/output.js): 出力欄の状態管理。挿入、削除、Undo/Redo、コピー、貼り付け、文字数カウントを扱う。
 - [js/favorites.js](js/favorites.js): お気に入りの永続化と購読。
 - [js/history.js](js/history.js): 入力履歴の永続化と購読。
+- [js/art.js](js/art.js) / [js/artlists.js](js/artlists.js): Unicode Art の作品とそのマイリストの永続化と購読。
+- [js/artpatterns.js](js/artpatterns.js): パターン工房。パターン定義の永続化と、展開エンジン（`{参照}`・`[ランダム選択]`・`{_}` を含む「技」の適用。SPEC.md §4.4 参照）。
 
 ### 3. 表示層
 

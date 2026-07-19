@@ -1965,6 +1965,124 @@ button {
   overflow: hidden;
 }
 
+/* ---------- パターン工房 (pattern studio inside the Unicode Art tab) ----- */
+/* 作品/パターン工房 sub-view pills, sitting between the main mode tabs and
+   whichever sub-view's board-bar is showing. */
+.art-subtabs {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding: 8px clamp(10px, 3vw, 20px) 0;
+}
+
+.art-subtab {
+  padding: 4px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+.art-subtab.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* Each sub-view owns its board-bar + scrolling board, mirroring what .panel
+   provides for the whole tab. */
+.art-subview {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.art-subview[hidden] {
+  display: none;
+}
+
+.pattern-board {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px clamp(10px, 3vw, 20px);
+}
+
+.pattern-section-title {
+  margin: 14px 0 8px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.pattern-section-title:first-child {
+  margin-top: 0;
+}
+
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+/* Whole tile is the tap target (tap = expand/apply, long-press/right-click =
+   menu), same interaction as .art-tile -- see bindTileBoard in app.js. */
+.pattern-tile {
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.pattern-tile:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.pattern-tile-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pattern-tile-badge {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fav) 22%, transparent);
+  color: var(--fav);
+  font-size: .65rem;
+  font-weight: 600;
+}
+
+/* white-space:pre for the same reason as .art-tile-text: wrapping would
+   shift characters and wreck the sample's alignment; clip instead. */
+.pattern-tile-preview {
+  display: block;
+  font-family: var(--font-glyph);
+  font-size: .8rem;
+  line-height: 1.4;
+  white-space: pre;
+  overflow: hidden;
+  max-height: calc(1.4em * 4);
+}
+
 /* ---------- context menu ---------- */
 .ctx-menu {
   position: fixed;
@@ -2182,6 +2300,141 @@ button {
   margin: 12px 8px 8px;
 }
 
+/* ---------- パターン工房 編集モーダル ---------- */
+.pattern-field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.pattern-field-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+.pattern-name-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: .95rem;
+}
+
+.pattern-name-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.pattern-mode-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.pattern-mode-row .pattern-field-label {
+  display: inline;
+  margin: 0 4px 0 0;
+}
+
+.pattern-mode-opt {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+.pattern-mode-opt.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* 適用単位/サンプルは技（{_} を含むパターン）にしか意味がないので、生成
+   パターン編集中は行ごと薄くする（app.js の renderPatternEditPreview）。 */
+.pattern-mode-row.disabled {
+  opacity: .45;
+  pointer-events: none;
+}
+
+.pattern-preview {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+
+.pattern-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.pattern-preview-head .pattern-field-label {
+  margin: 0;
+}
+
+.pattern-preview-sample {
+  width: 7em;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: var(--font-glyph);
+}
+
+.pattern-preview-sample:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* white-space:pre + horizontal scroll: expansion samples are art fragments,
+   so wrapping them would misalign multi-line results. */
+.pattern-preview-out {
+  min-height: 1.5em;
+  font-family: var(--font-glyph);
+  font-size: 1rem;
+  line-height: 1.4;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.pattern-help {
+  margin-bottom: 6px;
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+.pattern-help summary {
+  cursor: pointer;
+}
+
+.pattern-help ul {
+  margin: 6px 0 0;
+  padding-left: 1.2em;
+}
+
+.pattern-help li {
+  margin: 4px 0;
+}
+
+.pattern-help code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  font-family: var(--font-glyph);
+}
+
 .modal-actions .btn {
   flex: 1;
   padding: 6px;
@@ -2390,6 +2643,13 @@ button {
 
   .art-tile {
     margin-bottom: 5px;
+  }
+
+  /* Same halved spacing as .art-grid; a fixed 2 columns keeps tiles from
+     collapsing into a single over-wide column at in-between widths. */
+  .pattern-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
   }
 
   /* Half the shared 10px margin-top, and inset horizontally by the shadow's
@@ -2812,6 +3072,8 @@ button {
 .font-opt,
 .colormode-opt,
 .fav-highlight-opt,
+.art-subtab,
+.pattern-mode-opt,
 .mylist-select,
 .block-search,
 .plane-jump-btn,
@@ -2852,6 +3114,8 @@ button {
    source order) wins for them. */
 #output,
 .art-edit-textarea,
+.pattern-name-input,
+.pattern-preview-sample,
 .block-search,
 .jump,
 .mylist-select,

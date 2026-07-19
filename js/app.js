@@ -13,6 +13,8 @@ const { FavHighlight } = window.App.FavHighlight;
 const { BlockFavorites } = window.App.BlockFavorites;
 const { UnicodeArt } = window.App.Art;
 const { ArtLists } = window.App.ArtLists;
+const { ArtPatterns, sanitizeName: sanitizePatternName } = window.App.ArtPatterns;
+const PatternEngine = window.App.ArtPatterns.Engine;
 const UrlState = window.App.UrlState;
 
 async function main() {
@@ -41,6 +43,7 @@ async function main() {
   const blockFavorites = new BlockFavorites();
   const art = new UnicodeArt();
   const artLists = new ArtLists();
+  const artPatterns = new ArtPatterns();
   const currentBoard = $('#current-board');
   let revealInAll = null;
   let closeMobileDrawers = null;
@@ -400,7 +403,7 @@ async function main() {
     renderArtBoard(artBoard, items,
       `${list ? list.name : 'マイリスト'} はまだありません。<br>作品を長押し（または右クリック）して追加してください。`);
   }
-  bindArtBoard(artBoard, insertArt, artMenuItems);
+  bindTileBoard(artBoard, '.art-tile[data-art-id]', 'artId', insertArt, artMenuItems);
 
   // Named so both the desktop buttons and the mobile "マイリスト操作" combined
   // menu (see #art-mylist-menu-btn below) can share the same logic.
@@ -467,6 +470,224 @@ async function main() {
     if (!text) { showToast('出力部が空です'); return; }
     art.add(text);
     showToast('作品を保存しました');
+  });
+
+  // ---- パターン工房 (pattern studio: generators & 技 in the Art tab) -----
+  // 作品/パターン工房 sub-view toggle inside the Unicode Art tab. Like the
+  // main tabs, the choice is deliberately session-only (SPEC §9).
+  const artSubtabs = document.querySelectorAll('.art-subtab');
+  const artSubviews = { works: $('#art-works-view'), patterns: $('#art-patterns-view') };
+  const setArtSubview = (view) => {
+    artSubtabs.forEach((b) => b.classList.toggle('active', b.dataset.artview === view));
+    for (const key in artSubviews) artSubviews[key].hidden = key !== view;
+  };
+  artSubtabs.forEach((b) => b.addEventListener('click', () => setArtSubview(b.dataset.artview)));
+
+  const PATTERN_MODE_LABELS = { whole: '全体', char: '1文字ごと', line: '行ごと' };
+  const patternBoard = $('#pattern-board');
+  const resolvePatternBody = (name) => artPatterns.bodyByName(name);
+  const patternIsEffect = (pat) => PatternEngine.needsInput(pat.body, resolvePatternBody);
+
+  // Tile previews re-expand on every render, so random patterns show a fresh
+  // sample each time the board redraws. 技 previews show 「あ ⇒ 結果」.
+  function patternPreviewFor(pat, isFx) {
+    const r = isFx
+      ? PatternEngine.applyToText(pat.body, resolvePatternBody, 'あ', pat.mode)
+      : PatternEngine.expand(pat.body, resolvePatternBody);
+    let text = r.text;
+    const lines = text.split('\n');
+    if (lines.length > 4) text = lines.slice(0, 4).join('\n') + '\n…';
+    if (text.length > 300) text = text.slice(0, 300) + '…';
+    return isFx ? `あ ⇒ ${text}` : text;
+  }
+
+  function renderPatternBoard() {
+    if (!artPatterns.items.length) {
+      patternBoard.innerHTML = '<p class="fav-empty">パターンはまだありません。<br>「＋ 作成」から定義してください。</p>';
+      return;
+    }
+    const generators = [];
+    const effects = [];
+    for (const pat of artPatterns.items) (patternIsEffect(pat) ? effects : generators).push(pat);
+
+    const frag = document.createDocumentFragment();
+    const appendSection = (title, pats, isFx) => {
+      if (!pats.length) return;
+      const heading = document.createElement('div');
+      heading.className = 'pattern-section-title';
+      heading.textContent = title;
+      frag.appendChild(heading);
+      const grid = document.createElement('div');
+      grid.className = 'pattern-grid';
+      for (const pat of pats) {
+        const tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'pattern-tile';
+        tile.dataset.patternId = pat.id;
+        const nameEl = document.createElement('span');
+        nameEl.className = 'pattern-tile-name';
+        nameEl.textContent = pat.name;
+        if (isFx) {
+          const badge = document.createElement('span');
+          badge.className = 'pattern-tile-badge';
+          badge.textContent = `技・${PATTERN_MODE_LABELS[pat.mode]}`;
+          nameEl.appendChild(badge);
+        }
+        const previewEl = document.createElement('span');
+        previewEl.className = 'pattern-tile-preview';
+        previewEl.textContent = patternPreviewFor(pat, isFx);
+        tile.append(nameEl, previewEl);
+        grid.appendChild(tile);
+      }
+      frag.appendChild(grid);
+    };
+    appendSection('パターン ─ タップで展開して挿入（毎回抽選）', generators, false);
+    appendSection('技 ─ タップで出力部の文字列に適用', effects, true);
+    patternBoard.replaceChildren(frag);
+  }
+
+  // 技: replace the output area's selection (or the whole text when nothing
+  // is selected) with the applied result, then keep that range selected --
+  // so tapping the same 技 again stacks it recursively.
+  function applyPatternToOutput(pat, mode) {
+    const ta = output.ta;
+    const hasSel = ta.selectionStart !== ta.selectionEnd;
+    const start = hasSel ? ta.selectionStart : 0;
+    const target = hasSel ? ta.value.slice(ta.selectionStart, ta.selectionEnd) : ta.value;
+    if (!target) { showToast('出力部が空です'); return; }
+    const { text, truncated } = PatternEngine.applyToText(pat.body, resolvePatternBody, target, mode);
+    if (!text) { showToast('適用結果が空です'); return; }
+    if (!hasSel) ta.setSelectionRange(0, ta.value.length);
+    output.insert(text);
+    ta.setSelectionRange(start, start + text.length);
+    output.updateFakeCaret();
+    for (const cp of distinctCodepoints(text)) history.record(cp);
+    showToast(truncated ? '長すぎるため途中で打ち切りました' : `技「${pat.name}」を適用しました`);
+  }
+
+  function activatePattern(id) {
+    const pat = artPatterns.find(id);
+    if (!pat) return;
+    if (patternIsEffect(pat)) { applyPatternToOutput(pat, pat.mode); return; }
+    const { text, truncated } = PatternEngine.expand(pat.body, resolvePatternBody);
+    if (!text) { showToast('展開結果が空です'); return; }
+    output.insert(text);
+    for (const cp of distinctCodepoints(text)) history.record(cp);
+    if (truncated) showToast('長すぎるため展開を途中で打ち切りました');
+  }
+
+  function patternMenuItems(id) {
+    const pat = artPatterns.find(id);
+    if (!pat) return [];
+    const items = [
+      { label: '📝 編集', onClick: () => openPatternEditModal(pat) },
+      { label: '⧉ 複製', onClick: () => artPatterns.duplicate(id) },
+    ];
+    if (patternIsEffect(pat)) {
+      for (const mode of ['whole', 'char', 'line']) {
+        items.push({
+          label: `技を適用（${PATTERN_MODE_LABELS[mode]}）`,
+          onClick: () => applyPatternToOutput(pat, mode),
+        });
+      }
+    } else {
+      items.push({
+        label: '🎨 展開して作品に保存',
+        onClick: () => {
+          const { text } = PatternEngine.expand(pat.body, resolvePatternBody);
+          if (!text) { showToast('展開結果が空です'); return; }
+          art.add(text, pat.name);
+          showToast('作品として保存しました');
+        },
+      });
+    }
+    items.push({
+      label: '削除',
+      onClick: () => { if (window.confirm(`パターン「${pat.name}」を削除しますか？`)) artPatterns.remove(id); },
+    });
+    return items;
+  }
+
+  bindTileBoard(patternBoard, '.pattern-tile[data-pattern-id]', 'patternId', activatePattern, patternMenuItems);
+  artPatterns.subscribe(renderPatternBoard);
+  renderPatternBoard();
+
+  // ---- パターン編集モーダル ----------------------------------------------
+  const patternEditModal = $('#pattern-edit-modal');
+  const patternEditHeading = $('#pattern-edit-heading');
+  const patternNameInput = $('#pattern-name-input');
+  const patternBodyInput = $('#pattern-body-input');
+  const patternModeRow = $('#pattern-mode-row');
+  const patternModeOpts = patternModeRow.querySelectorAll('.pattern-mode-opt');
+  const patternPreviewSample = $('#pattern-preview-sample');
+  const patternPreviewOut = $('#pattern-preview-out');
+  let patternEditingId = null;
+  let patternEditMode = 'whole';
+
+  // Resolves {自分の名前} against the *editing* body text (not the stored
+  // one), so a self-recursive pattern previews its unsaved edits live.
+  function patternEditResolver() {
+    const editingName = sanitizePatternName(patternNameInput.value);
+    return (name) => (editingName && name === editingName
+      ? patternBodyInput.value
+      : artPatterns.bodyByName(name));
+  }
+
+  function renderPatternEditPreview() {
+    const body = patternBodyInput.value;
+    const resolve = patternEditResolver();
+    const isFx = body ? PatternEngine.needsInput(body, resolve) : false;
+    // 適用単位/サンプル入力は技にしか意味がないので、生成パターンでは薄く無効化
+    patternModeRow.classList.toggle('disabled', !isFx);
+    patternPreviewSample.hidden = !isFx;
+    if (!body) { patternPreviewOut.textContent = ''; return; }
+    const r = isFx
+      ? PatternEngine.applyToText(body, resolve, patternPreviewSample.value || 'あ', patternEditMode)
+      : PatternEngine.expand(body, resolve);
+    patternPreviewOut.textContent = r.text + (r.truncated ? ' …' : '');
+  }
+
+  function setPatternEditMode(mode) {
+    patternEditMode = mode;
+    patternModeOpts.forEach((o) => o.classList.toggle('active', o.dataset.patternMode === mode));
+    renderPatternEditPreview();
+  }
+
+  function openPatternEditModal(pat) {
+    patternEditingId = pat ? pat.id : null;
+    patternEditHeading.textContent = pat ? 'パターンを編集' : '新しいパターン';
+    patternNameInput.value = pat ? pat.name : '';
+    patternBodyInput.value = pat ? pat.body : '';
+    patternPreviewSample.value = 'あいう';
+    setPatternEditMode(pat ? pat.mode : 'whole'); // renders the preview too
+    patternEditModal.hidden = false;
+    (pat ? patternBodyInput : patternNameInput).focus();
+  }
+
+  function closePatternEditModal() {
+    patternEditModal.hidden = true;
+    patternEditingId = null;
+  }
+
+  patternModeOpts.forEach((o) => o.addEventListener('click', () => setPatternEditMode(o.dataset.patternMode)));
+  for (const el of [patternNameInput, patternBodyInput, patternPreviewSample])
+    el.addEventListener('input', renderPatternEditPreview);
+  $('#pattern-reroll-btn').addEventListener('click', renderPatternEditPreview);
+  $('#pattern-add-btn').addEventListener('click', () => openPatternEditModal(null));
+  $('#pattern-edit-close').addEventListener('click', closePatternEditModal);
+  patternEditModal.querySelector('.modal-backdrop').addEventListener('click', closePatternEditModal);
+  $('#pattern-edit-save').addEventListener('click', () => {
+    const name = sanitizePatternName(patternNameInput.value);
+    const body = patternBodyInput.value;
+    if (!name) { showToast('名前を入力してください'); return; }
+    if (!body) { showToast('本文が空です'); return; }
+    if (patternEditingId) artPatterns.update(patternEditingId, { name, body, mode: patternEditMode });
+    else artPatterns.add({ name, body, mode: patternEditMode });
+    closePatternEditModal();
+    showToast('パターンを保存しました');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!patternEditModal.hidden && e.key === 'Escape') closePatternEditModal();
   });
 
   // ---- font toggle (system glyphs vs installed Noto fonts) --------------
@@ -754,11 +975,12 @@ function renderArtBoard(el, items, emptyHtml) {
   }
 }
 
-// Same long-press-vs-tap pattern as bindCharBoard, keyed by data-art-id
-// instead of data-cp.
-function bindArtBoard(root, insert, menuItems) {
+// Same long-press-vs-tap pattern as bindCharBoard, keyed by an arbitrary
+// data attribute instead of data-cp -- shared by the Unicode Art tiles
+// (data-art-id) and the パターン工房 tiles (data-pattern-id).
+function bindTileBoard(root, selector, dataKey, activate, menuItems) {
   let timer = null, suppress = false, xy = null;
-  const idOf = (t) => { const el = t.closest('.art-tile[data-art-id]'); return el ? el.dataset.artId : null; };
+  const idOf = (t) => { const el = t.closest(selector); return el ? el.dataset[dataKey] : null; };
 
   root.addEventListener('pointerdown', (e) => {
     const id = idOf(e.target); if (id == null) return;
@@ -775,7 +997,7 @@ function bindArtBoard(root, insert, menuItems) {
   root.addEventListener('click', (e) => {
     const id = idOf(e.target); if (id == null) return;
     if (suppress) { suppress = false; return; }
-    insert(id);
+    activate(id);
   });
   root.addEventListener('contextmenu', (e) => {
     const id = idOf(e.target); if (id == null) return;
