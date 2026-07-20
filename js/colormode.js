@@ -6,12 +6,8 @@ const KEY = 'unicode-app:colormode:v1';
 const MODES = ['none', 'category', 'age'];
 
 function load() {
-  try {
-    const v = localStorage.getItem(KEY);
-    return MODES.includes(v) ? v : 'category';
-  } catch {
-    return 'category';
-  }
+  const v = window.App.Util.storage.get(KEY, null);
+  return MODES.includes(v) ? v : 'category';
 }
 
 class ColorMode {
@@ -25,7 +21,7 @@ class ColorMode {
   set(mode) {
     if (!MODES.includes(mode) || mode === this.mode) return;
     this.mode = mode;
-    try { localStorage.setItem(KEY, mode); } catch { /* storage disabled / full */ }
+    window.App.Util.storage.set(KEY, mode);
     this.emit();
   }
 

@@ -24,10 +24,8 @@ class OutputArea {
     this.onChange = onChange;
     this.coalesceTimer = null;
 
-    try {
-      const saved = localStorage.getItem(TEXT_KEY);
-      if (saved) this.ta.value = saved;
-    } catch { /* storage disabled */ }
+    const saved = window.App.Util.storage.get(TEXT_KEY, null);
+    if (saved) this.ta.value = saved;
     this.history = [this.snapshot()];
     this.hi = 0;
 
@@ -362,7 +360,7 @@ class OutputArea {
       const gr = graphemes(v).length;
       this.countEl.textContent = `${gr} 文字 / ${cps} コードポイント`;
     }
-    try { localStorage.setItem(TEXT_KEY, v); } catch { /* storage disabled / full */ }
+    window.App.Util.storage.set(TEXT_KEY, v);
     if (this.onChange) this.onChange(v);
   }
 }

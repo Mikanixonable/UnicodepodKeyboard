@@ -46,15 +46,9 @@ class ArtLists {
   }
 
   load() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return this.seed();
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') return this.normalizeState(parsed);
-      return this.seed();
-    } catch {
-      return this.seed();
-    }
+    const parsed = window.App.Util.storage.getJson(KEY, null);
+    if (parsed && typeof parsed === 'object') return this.normalizeState(parsed);
+    return this.seed();
   }
 
   seed() {
@@ -85,13 +79,11 @@ class ArtLists {
   }
 
   save() {
-    try {
-      const payload = {
-        activeId: this.state.activeId,
-        lists: this.state.lists.map(({ set, ...list }) => list),
-      };
-      localStorage.setItem(KEY, JSON.stringify(payload));
-    } catch { /* storage disabled / full */ }
+    const payload = {
+      activeId: this.state.activeId,
+      lists: this.state.lists.map(({ set, ...list }) => list),
+    };
+    window.App.Util.storage.setJson(KEY, payload);
   }
 
   get lists() { return this.state.lists; }

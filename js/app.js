@@ -790,7 +790,7 @@ function setupFontToggle() {
   const cur = () => FONTS.includes(document.documentElement.dataset.font) ? document.documentElement.dataset.font : 'extended';
   const apply = (font) => {
     document.documentElement.dataset.font = font;
-    try { localStorage.setItem(KEY, font); } catch { /* ignore */ }
+    window.App.Util.storage.set(KEY, font);
     opts.forEach((o) => o.classList.toggle('active', o.dataset.font === font));
   };
   opts.forEach((o) => o.addEventListener('click', () => apply(o.dataset.font)));
@@ -814,7 +814,7 @@ function setupThemeToggle() {
   };
   const apply = (theme) => {
     document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem(KEY, theme); } catch { /* ignore */ }
+    window.App.Util.storage.set(KEY, theme);
     render();
   };
   opts.forEach((o) => o.addEventListener('click', () => apply(o.dataset.themeOpt)));

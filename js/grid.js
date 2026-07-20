@@ -50,20 +50,18 @@ class Grid {
 
     // restore scroll position (by codepoint, not raw pixels -- rowH depends
     // on viewport width, which may differ from the session that saved it)
-    try {
-      const saved = localStorage.getItem(SCROLL_KEY);
-      if (saved != null) {
-        const cp = Number(saved);
-        if (Number.isFinite(cp) && D.inScope(cp)) this.scrollToCp(cp);
-      }
-    } catch { /* storage disabled */ }
+    const saved = window.App.Util.storage.get(SCROLL_KEY, null);
+    if (saved != null) {
+      const cp = Number(saved);
+      if (Number.isFinite(cp) && D.inScope(cp)) this.scrollToCp(cp);
+    }
   }
 
   // Debounced so rapid scroll events don't hammer localStorage.
   saveScrollPos(cp) {
     clearTimeout(this.scrollSaveTimer);
     this.scrollSaveTimer = setTimeout(() => {
-      try { localStorage.setItem(SCROLL_KEY, String(cp)); } catch { /* storage disabled / full */ }
+      window.App.Util.storage.set(SCROLL_KEY, String(cp));
     }, 250);
   }
 

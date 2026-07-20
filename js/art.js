@@ -7,15 +7,10 @@
 const KEY = 'unicode-app:art:v1';
 
 function load() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr)
-      ? arr.filter((w) => w && typeof w.id === 'string' && typeof w.text === 'string')
-      : [];
-  } catch {
-    return [];
-  }
+  const arr = window.App.Util.storage.getJson(KEY, []);
+  return Array.isArray(arr)
+    ? arr.filter((w) => w && typeof w.id === 'string' && typeof w.text === 'string')
+    : [];
 }
 
 class UnicodeArt {
@@ -25,7 +20,7 @@ class UnicodeArt {
   }
 
   save() {
-    try { localStorage.setItem(KEY, JSON.stringify(this.items)); } catch { /* storage disabled / full */ }
+    window.App.Util.storage.setJson(KEY, this.items);
   }
 
   // Newest first, so a freshly saved piece appears at the top of the tile grid.

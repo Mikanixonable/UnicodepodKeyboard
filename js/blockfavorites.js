@@ -9,13 +9,8 @@
 const KEY = 'unicode-app:fav-blocks:v1';
 
 function load() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr.filter((n) => Number.isInteger(n)) : [];
-  } catch {
-    return [];
-  }
+  const arr = window.App.Util.storage.getJson(KEY, []);
+  return Array.isArray(arr) ? arr.filter((n) => Number.isInteger(n)) : [];
 }
 
 class BlockFavorites {
@@ -57,7 +52,7 @@ class BlockFavorites {
   list() { return [...this.order]; }
 
   save() {
-    try { localStorage.setItem(KEY, JSON.stringify(this.order)); } catch { /* storage disabled / full */ }
+    window.App.Util.storage.setJson(KEY, this.order);
   }
 
   subscribe(fn) { this.subs.add(fn); return () => this.subs.delete(fn); }

@@ -9,11 +9,7 @@
 const KEY = 'unicode-app:fav-highlight:v1';
 
 function load() {
-  try {
-    return localStorage.getItem(KEY) === '1';
-  } catch {
-    return false;
-  }
+  return window.App.Util.storage.get(KEY, null) === '1';
 }
 
 class FavHighlight {
@@ -28,7 +24,7 @@ class FavHighlight {
     enabled = !!enabled;
     if (enabled === this.enabled) return;
     this.enabled = enabled;
-    try { localStorage.setItem(KEY, enabled ? '1' : '0'); } catch { /* storage disabled / full */ }
+    window.App.Util.storage.set(KEY, enabled ? '1' : '0');
     this.emit();
   }
 

@@ -12,16 +12,12 @@ class History {
   }
 
   load() {
-    try {
-      const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
-      return Array.isArray(arr) ? arr.filter(n => Number.isInteger(n)).slice(0, CAP) : [];
-    } catch {
-      return [];
-    }
+    const arr = window.App.Util.storage.getJson(KEY, []);
+    return Array.isArray(arr) ? arr.filter(n => Number.isInteger(n)).slice(0, CAP) : [];
   }
 
   save() {
-    try { localStorage.setItem(KEY, JSON.stringify(this.list)); } catch { /* ignore */ }
+    window.App.Util.storage.setJson(KEY, this.list);
   }
 
   // Record an inserted codepoint: move to front, dedupe, cap.
