@@ -4,11 +4,10 @@
 
 const D = window.App.Data;
 const { openMenu } = window.App.Menu;
-const { escapeHtml } = window.App.Util;
+const { escapeHtml, bindLongPressMenu } = window.App.Util;
 
 const BUFFER = 6; // extra rows above/below viewport
 const SCROLL_KEY = 'unicode-app:scroll-cp:v1';
-const LONG_PRESS_MS = 450;
 const FLASH_MS = 1300;
 
 class Grid {
@@ -232,65 +231,35 @@ class Grid {
   }
 
   bindPointer() {
-    let timer = null, suppress = false, downXY = null, pressedEl = null;
-    const clearTimer = () => { clearTimeout(timer); timer = null; };
     // Explicit tap-feedback instead of relying on CSS :active (see the
     // .cell.pressed comment in styles.css): the grid rebuilds its cells on
     // every scroll frame, and touch browsers track :active by screen
     // position rather than element identity, so a scroll can leave a
     // *different* cell than the one actually tapped looking highlighted.
-    // Always clearing this explicitly (up/cancel/leave/scroll) avoids that.
+    // Always clearing this explicitly (up/cancel/move/leave/scroll) avoids
+    // that; move/up/cancel go through bindLongPressMenu's press hooks, and
+    // pointerleave/scroll (which only affect the feedback, not the menu
+    // timer) are bound separately below.
+    let pressedEl = null;
     const clearPressed = () => {
       if (pressedEl) { pressedEl.classList.remove('pressed'); pressedEl = null; }
     };
 
-    this.rowsEl.addEventListener('pointerdown', (e) => {
-      const cp = this.cellCp(e.target);
-      if (cp == null) return;
-      suppress = false;
-      downXY = { x: e.clientX, y: e.clientY };
-      if (e.pointerType !== 'mouse') {
+    bindLongPressMenu(this.rowsEl, {
+      resolve: (t) => this.cellCp(t),
+      onTap: (cp) => this.onInsert(cp),
+      onMenu: (cp, x, y) => openMenu(x, y, this.menuItems(cp, x, y)),
+      suppressOnCancel: true,
+      onPressStart: (e) => {
         clearPressed();
         pressedEl = e.target.closest('.cell[data-cp]');
         if (pressedEl) pressedEl.classList.add('pressed');
-        clearTimer();
-        timer = setTimeout(() => {
-          suppress = true;
-          openMenu(downXY.x, downXY.y, this.menuItems(cp, downXY.x, downXY.y));
-        }, LONG_PRESS_MS);
-      }
+      },
+      onPressEnd: clearPressed,
     });
 
-    this.rowsEl.addEventListener('pointermove', (e) => {
-      if (downXY && Math.hypot(e.clientX - downXY.x, e.clientY - downXY.y) > 10) {
-        clearTimer();
-        // A drag this size means the touch turned into a scroll, not a tap
-        // -- clear the pressed feedback right away instead of waiting for a
-        // 'scroll' event, which only fires once scrollTop has actually
-        // changed (a few pixels of initial finger movement otherwise leaves
-        // the original cell looking pressed while already dragging).
-        clearPressed();
-      }
-    });
-
-    this.rowsEl.addEventListener('pointerup', () => { clearTimer(); clearPressed(); });
-    this.rowsEl.addEventListener('pointercancel', () => { clearTimer(); clearPressed(); suppress = true; });
     this.rowsEl.addEventListener('pointerleave', clearPressed);
     this.scroll.addEventListener('scroll', clearPressed, { passive: true });
-
-    this.rowsEl.addEventListener('click', (e) => {
-      const cp = this.cellCp(e.target);
-      if (cp == null) return;
-      if (suppress) { suppress = false; return; }
-      this.onInsert(cp);
-    });
-
-    this.rowsEl.addEventListener('contextmenu', (e) => {
-      const cp = this.cellCp(e.target);
-      if (cp == null) return;
-      e.preventDefault();
-      openMenu(e.clientX, e.clientY, this.menuItems(cp, e.clientX, e.clientY));
-    });
   }
 
   scrollToCp(cp, flash) {

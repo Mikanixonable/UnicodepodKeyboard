@@ -16,9 +16,8 @@ const { ArtLists } = window.App.ArtLists;
 const { ArtPatterns, sanitizeName: sanitizePatternName } = window.App.ArtPatterns;
 const PatternEngine = window.App.ArtPatterns.Engine;
 const UrlState = window.App.UrlState;
-const { escapeHtml } = window.App.Util;
+const { escapeHtml, bindLongPressMenu } = window.App.Util;
 
-const LONG_PRESS_MS = 450;
 const TOAST_MS = 1800;
 
 async function main() {
@@ -974,30 +973,10 @@ function renderArtBoard(el, items, emptyHtml) {
 // data attribute instead of data-cp -- shared by the Unicode Art tiles
 // (data-art-id) and the パターン工房 tiles (data-pattern-id).
 function bindTileBoard(root, selector, dataKey, activate, menuItems) {
-  let timer = null, suppress = false, xy = null;
-  const idOf = (t) => { const el = t.closest(selector); return el ? el.dataset[dataKey] : null; };
-
-  root.addEventListener('pointerdown', (e) => {
-    const id = idOf(e.target); if (id == null) return;
-    suppress = false; xy = { x: e.clientX, y: e.clientY };
-    if (e.pointerType !== 'mouse') {
-      clearTimeout(timer);
-      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(id, xy.x, xy.y)); }, LONG_PRESS_MS);
-    }
-  });
-  root.addEventListener('pointermove', (e) => {
-    if (timer && xy && Math.hypot(e.clientX - xy.x, e.clientY - xy.y) > 10) clearTimeout(timer);
-  });
-  root.addEventListener('pointerup', () => clearTimeout(timer));
-  root.addEventListener('click', (e) => {
-    const id = idOf(e.target); if (id == null) return;
-    if (suppress) { suppress = false; return; }
-    activate(id);
-  });
-  root.addEventListener('contextmenu', (e) => {
-    const id = idOf(e.target); if (id == null) return;
-    e.preventDefault();
-    openMenu(e.clientX, e.clientY, menuItems(id, e.clientX, e.clientY));
+  bindLongPressMenu(root, {
+    resolve: (t) => { const el = t.closest(selector); return el ? el.dataset[dataKey] : null; },
+    onTap: activate,
+    onMenu: (id, x, y) => openMenu(x, y, menuItems(id, x, y)),
   });
 }
 
@@ -1038,30 +1017,10 @@ async function copyTextToClipboard(text) {
 
 // Wire tap-to-insert + long-press/right-click menu on a char keyboard.
 function bindCharBoard(root, insert, menuItems) {
-  let timer = null, suppress = false, xy = null;
-  const cpOf = (t) => { const b = t.closest('.cell[data-cp]'); return b ? Number(b.dataset.cp) : null; };
-
-  root.addEventListener('pointerdown', (e) => {
-    const cp = cpOf(e.target); if (cp == null) return;
-    suppress = false; xy = { x: e.clientX, y: e.clientY };
-    if (e.pointerType !== 'mouse') {
-      clearTimeout(timer);
-      timer = setTimeout(() => { suppress = true; openMenu(xy.x, xy.y, menuItems(cp, xy.x, xy.y)); }, LONG_PRESS_MS);
-    }
-  });
-  root.addEventListener('pointermove', (e) => {
-    if (timer && xy && Math.hypot(e.clientX - xy.x, e.clientY - xy.y) > 10) clearTimeout(timer);
-  });
-  root.addEventListener('pointerup', () => clearTimeout(timer));
-  root.addEventListener('click', (e) => {
-    const cp = cpOf(e.target); if (cp == null) return;
-    if (suppress) { suppress = false; return; }
-    insert(cp);
-  });
-  root.addEventListener('contextmenu', (e) => {
-    const cp = cpOf(e.target); if (cp == null) return;
-    e.preventDefault();
-    openMenu(e.clientX, e.clientY, menuItems(cp, e.clientX, e.clientY));
+  bindLongPressMenu(root, {
+    resolve: (t) => { const b = t.closest('.cell[data-cp]'); return b ? Number(b.dataset.cp) : null; },
+    onTap: insert,
+    onMenu: (cp, x, y) => openMenu(x, y, menuItems(cp, x, y)),
   });
 }
 

@@ -3,9 +3,7 @@
 (function () {
 
 const D = window.App.Data;
-const { escapeHtml } = window.App.Util;
-
-const LONG_PRESS_MS = 450;
+const { escapeHtml, bindLongPressMenu } = window.App.Util;
 
 function planeLabel(p) {
   const { ja, en } = D.planeInfo(p);
@@ -115,39 +113,14 @@ function buildBlockList(listEl, mode, onItemClick, {
         ? `<div class="block-item-samples">${samples.map((cp) => `<span class="sample-glyph">${escapeHtml(D.glyphFor(cp))}</span>`).join('')}</div>`
         : '');
     if (onContextMenu) {
-      // Right-click (contextmenu) covers desktop, but touch devices --
-      // especially iOS Safari -- don't reliably fire contextmenu on a
-      // long-press, so there'd be no way to reach "お気に入りブロックに
-      // 追加" on mobile without this. Same long-press-vs-tap pattern as
-      // grid.js's bindPointer()/app.js's bindCharBoard(): a touch pointerdown
-      // starts a 450ms timer that opens the menu and suppresses the
-      // following click; releasing/moving early cancels it as a normal tap.
-      let timer = null, suppress = false, downXY = null;
-      const clearTimer = () => { clearTimeout(timer); timer = null; };
-      li.addEventListener('pointerdown', (e) => {
-        suppress = false;
-        downXY = { x: e.clientX, y: e.clientY };
-        if (e.pointerType !== 'mouse') {
-          clearTimer();
-          timer = setTimeout(() => {
-            suppress = true;
-            onContextMenu(b, downXY.x, downXY.y);
-          }, LONG_PRESS_MS);
-        }
-      });
-      li.addEventListener('pointermove', (e) => {
-        if (timer && downXY && Math.hypot(e.clientX - downXY.x, e.clientY - downXY.y) > 10)
-          clearTimer();
-      });
-      li.addEventListener('pointerup', clearTimer);
-      li.addEventListener('pointercancel', () => { clearTimer(); suppress = true; });
-      li.addEventListener('click', (e) => {
-        if (suppress) { suppress = false; e.stopImmediatePropagation(); return; }
-        onItemClick(b);
-      });
-      li.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        onContextMenu(b, e.clientX, e.clientY);
+      // Without the long-press fallback there'd be no way to reach
+      // "お気に入りブロックに追加" on mobile (see bindLongPressMenu).
+      bindLongPressMenu(li, {
+        resolve: () => b,
+        onTap: onItemClick,
+        onMenu: (block, x, y) => onContextMenu(block, x, y),
+        suppressOnCancel: true,
+        stopSuppressedClick: true,
       });
     } else {
       li.addEventListener('click', () => onItemClick(b));
